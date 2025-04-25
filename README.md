@@ -1,3 +1,85 @@
+# VisionVend
+
+![Logo](logo.png)
+
+## Smart Vending Machine Prototype
+
+VisionVend is an open-source project for building a smart vending machine using a Raspberry Pi, 5G connectivity, and remote AI for object detection and payment processing. All computational workload (object detection, payment) is handled by a remote server; the vending machine acts as a simple interface for customer interaction and physical control.
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Python 3.9+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) for environment management
+- Raspberry Pi 4 Model B (or compatible)
+- Camera, relay, NFC/RFID reader (see Hardware List below)
+
+### Setup Instructions
+1. **Clone the repository:**
+   ```sh
+   git clone <your-repo-url>
+   cd VisionVend
+   ```
+2. **Create and activate a virtual environment with uv:**
+   ```sh
+   uv venv .venv
+   .venv\Scripts\activate  # On Windows
+   # Or: source .venv/bin/activate  # On Linux/macOS
+   ```
+3. **Install dependencies:**
+   ```sh
+   uv pip install -r requirements.txt
+   ```
+4. **Copy and configure environment variables:**
+   ```sh
+   cp .env.example .env  # Or create .env manually
+   # Edit .env to add your Stripe API keys, camera settings, etc.
+   ```
+
+### Quickstart
+- **Run the Pi client:**
+  ```sh
+  python VisionVend/software/pi_client.py
+  ```
+- **Run the server:**
+  ```sh
+  python VisionVend/software/server.py
+  ```
+- (Adjust script names as needed)
+
+---
+
+## Directory Structure
+```
+VisionVend/
+├── VisionVend/
+│   ├── hardware/     # Hardware integration code
+│   ├── model_zoo/    # ML models for object detection
+│   └── software/     # Client/server software
+├── assets/           # Images, diagrams, logos
+├── docs/             # Design docs, architecture, research
+├── requirements.txt  # Python dependencies
+├── .env.example      # Sample environment config
+└── README.md         # This file
+```
+
+---
+
+## Usage
+- **Client (Pi) responsibilities:**
+  - Stream video from camera to server
+  - Handle relay/lock control via GPIO
+  - Accept NFC/RFID payments and send to server
+- **Server responsibilities:**
+  - Run object detection (e.g. YOLO)
+  - Integrate with Stripe for payment authorization/capture
+  - Send lock/unlock commands to client
+  - Store transaction and inventory data
+
+---
+
 ![Logo](logo.png)
 
 # VisionVend
