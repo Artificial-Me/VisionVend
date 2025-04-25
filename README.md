@@ -1,4 +1,4 @@
-![Logo](9A6F5F93-269D-4487-B15B-0189FAE2D001.png)
+![Logo](logo.png)
 
 # VisionVend
 Smart Vending 
