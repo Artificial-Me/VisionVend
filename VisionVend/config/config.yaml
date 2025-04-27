@@ -1,0 +1,59 @@
+# Wi-Fi and MQTT settings
+wifi:
+  ssid: "your_wifi_ssid"
+  password: "your_wifi_password"
+mqtt:
+  broker: "your_mqtt_broker_ip"
+  port: 1883
+  client_id: "retail_system"
+  unlock_topic: "case/123/cmd"
+  status_topic: "case/123/status"
+  door_topic: "case/123/door"
+  hmac_secret: "your_hmac_secret"
+
+# LTE settings
+lte:
+  apn: "your_apn"
+
+# Stripe API
+stripe:
+  api_key: "sk_test_your_stripe_api_key"
+
+# Server settings
+server:
+  host: "0.0.0.0"
+  port: 5000
+  url: "http://your_server_ip:5000"
+
+# Camera settings
+camera:
+  resolution: [1280, 720]
+  framerate: 30
+  storage_path: "/sd/videos"
+
+# Hardware pins (ESP32-S3)
+pins:
+  mosfet: 26
+  hall_sensor: 27
+  hx711_sck: 14
+  hx711_dt: 15
+  oled_sda: 19
+  oled_scl: 18
+  neopixel: 23
+  buzzer: 25
+  tof_sda: 21
+  tof_scl: 22
+  pi_signal: 16
+
+# Inventory mapping
+inventory:
+  cola: {weight: 355, tolerance: 5, price: 2.00}
+  chips: {weight: 70, tolerance: 4, price: 1.50}
+
+# Lock settings
+lock:
+  timeout: 10
+
+# Feedback settings
+feedback:
+  languages: ["en","es"]
