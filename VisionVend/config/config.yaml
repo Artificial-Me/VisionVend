@@ -56,4 +56,4 @@ lock:
 
 # Feedback settings
 feedback:
-  languages: ["en","es"]
+  languages: ["en"]

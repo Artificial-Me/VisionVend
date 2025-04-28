@@ -1,24 +1,142 @@
-A solution that feels like “filling-in a spreadsheet” instead of “installing software” is usually the easiest thing for non-technical shop or vending-machine owners.
-The entire system can be boiled down to three Google tools that most people already know (Sheets, Forms, Drive) plus one tiny helper program that you, the technical person, run in the background.
+# Inventory Management with Google Sheets & Python Helper
 
-────────────────────────────────────────
+## Overview
+This solution provides a simple, spreadsheet-based inventory system for vending/fridge owners. Owners interact only with Google Sheets, Forms, and optionally AppSheet—no software installation required. A lightweight Python script automates syncing and sales logging.
 
-1. What the owner sees and does ──────────────────────────────────────── A. Google Sheet (acts as the “back office”)
+---
 
-• Tab 1 : Products
-Columns:  SKU | Name | Price ($) | Weight (g) | Current Stock | Photo URL
-– They add a new row or change numbers exactly the same way they already use Excel.
-– Green or red cell-colours (conditional formatting) warn when stock is low.
+## 1. Owner Workflow
 
-• Tab 2 : Restock / Adjust log
-Automatically filled every time they submit a simple Google Form (next item).
+### A. Google Sheet ("Back Office")
+- **Products Tab**
+  - Columns: SKU | Name | Price ($) | Weight (g) | Current Stock | Photo URL
+  - Add/edit products just like in Excel.
+  - Conditional formatting highlights low stock.
+- **Restock/Adjust Log**
+  - Filled automatically via a Google Form when restocking.
+- **Sales Log**
+  - Updated by the helper script when sales are recorded.
+- **Charts Tab**
+  - Pre-built charts show sales trends and stock levels. No setup required.
 
-• Tab 3 : Sales log
-Filled automatically by the helper program when your fridge tells it “2 Cokes were taken”.
+### B. Google Form (for Restocking)
+- Mobile-friendly, opens in any browser.
+- Two fields:
+  1. Product (dropdown from Products tab)
+  2. Quantity loaded/removed
+- Submissions update the Restock log and recalculate stock automatically.
 
-• Tab 4 : Charts
-Built-in Sheets charts show “Units sold per day”, “Top sellers”, “Average days between restocks”, etc.
-Owners don’t have to build anything: the template already contains the charts and updates live.
+### C. Optional: AppSheet Mobile App
+- In Google Sheets: Extensions → AppSheet → Create an app.
+- Instantly generates a mobile web app for inventory and restocking.
+- No installation—just save the link to the home screen.
+
+---
+
+## 2. Background Automation (Technical Setup)
+
+A simple Python script runs on any always-on PC or Raspberry Pi:
+
+1. **Syncs Product Data**
+   - Every 30 seconds, fetches the Products tab via the Google Sheets API (using gspread).
+   - Converts data to YAML/JSON for the fridge’s config file—always in sync.
+2. **Handles Sales Transactions**
+   - Exposes a `/transaction` HTTP endpoint.
+   - When the fridge reports items removed, the script updates stock in the Sheet and logs the sale.
+3. **(Optional) Downloads Product Images**
+   - Downloads new Photo URLs from the Sheet to a local folder for retraining models.
+
+**Setup:**
+- Create a Google service account, share the Sheet with it, and save the credentials file next to the script. No further configuration needed.
+
+---
+
+## 3. Why This Is User-Friendly
+- Owners use familiar Google tools—no new accounts or software.
+- Works instantly on any device.
+- Built-in version history, exports, and charts.
+- Easily extensible (e.g., connect to Looker Studio for dashboards).
+
+---
+
+## 4. Quick Start Checklist (For You)
+1. Copy the provided Google Sheet template.
+2. Share it with the owner (Viewer) and your service account (Editor).
+3. Paste the Sheet ID into the helper script and run `python helper.py`.
+4. Update your fridge/Flask code to POST sales to `http://<PC_IP>:5001/transaction`.
+5. From then on, owners only use the Sheet or AppSheet link.
+
+---
+
+## 5. Google Sheet Template Structure
+
+- **Products Tab**
+  - Columns: SKU, Name, Price, Weight, Photo URL, Opening Stock, Restock/Adjust Sum, Sales Sum, Current Stock
+  - Example formulas:
+    - Restock/Adjust Sum: `=IFERROR(SUMIF(RestockLog!B:B, A2, RestockLog!C:C),0)`
+    - Sales Sum: `=IFERROR(SUMIF(SalesLog!B:B, A2, SalesLog!C:C),0)`
+    - Current Stock: `=F2+G2+H2`
+  - Conditional formatting: highlight Current Stock < 5.
+- **RestockLog Tab**
+  - Columns: Timestamp, SKU, Qty, Reason
+  - Populated via Google Form.
+- **SalesLog Tab**
+  - Columns: Timestamp, SKU, Qty (negative), TransactionID
+  - Populated by the helper script.
+- **Charts Tab (Optional)**
+  - Visualize sales and restock data.
+
+---
+
+## 6. Service Account Setup (One-Time)
+1. In Google Cloud Console, create a project and enable Sheets & Drive APIs.
+2. Create a service account and download credentials.json.
+3. Share the Sheet with the service account (Editor access).
+
+---
+
+## 7. Python Helper Script (helper.py)
+- Uses `gspread`, `Flask`, and `pyyaml`.
+- On startup:
+  - Opens the Sheet.
+  - Starts a background sync to update the config file every 30 seconds.
+  - Runs a Flask server with a `/transaction` endpoint.
+- On transaction:
+  - Appends sales to SalesLog.
+  - Updates inventory in the config file.
+
+---
+
+## 8. Integrate with Fridge/Flask Code
+Replace local database writes with a single HTTP POST to the helper script’s `/transaction` endpoint:
+
+```python
+import requests, json
+payload = {
+    "transaction_id": txn_id,
+    "items": [{"sku": sku, "qty": qty} for sku, qty in items_dict.items()]
+}
+requests.post("http://<PC_running_helper>:5001/transaction",
+              data=json.dumps(payload),
+              headers={"Content-Type":"application/json"},
+              timeout=2)
+```
+
+---
+
+## 9. Optional Enhancements
+- **Restock Alerts:** Use Sheets formulas and AppSheet workflows for notifications.
+- **Exports:** Use built-in Google Sheets export features.
+- **Advanced Dashboards:** Connect to Google Looker Studio.
+
+---
+
+## Recap: Non-Technical Workflow
+1. Owners update inventory through the Sheet or AppSheet.
+2. Fridge reports sales via the helper script.
+3. Everything else—stock updates, logs, and config files—is automated.
+
+Technical workload for you: ~70 lines of Python once, then forget about it.
 
 B.  Google Form (the only thing they open while they are physically refilling)
 

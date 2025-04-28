@@ -1,0 +1,9 @@
+torch
+opencv-python
+Pillow
+gspread
+google-auth
+pyyaml
+fastapi
+uvicorn
+pydantic
