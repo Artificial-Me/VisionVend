@@ -1,4 +1,3 @@
-from flask import Flask, jsonify, request
 import stripe
 from paho.mqtt import client as mqtt_client
 import yaml
@@ -7,8 +6,19 @@ import hmac
 import hashlib
 import logging
 from webpush import send_notification
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse
 
-app = Flask(__name__)
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 logging.basicConfig(level=logging.INFO)
 
 # Load config
@@ -25,8 +35,8 @@ door_topic = config["mqtt"]["door_topic"]
 hmac_secret = config["mqtt"]["hmac_secret"]
 
 # MQTT client setup
-mqtt_client = mqtt_client.Client(mqtt_client_id)
-mqtt_client.connect(mqtt_broker, mqtt_port)
+mqtt = mqtt_client.Client(mqtt_client_id)
+mqtt.connect(mqtt_broker, mqtt_port)
 
 # Transaction tracking
 transaction_intent = {}
@@ -56,15 +66,18 @@ def on_message(client, userdata, msg):
             elif payment_intent_id:
                 stripe.PaymentIntent.cancel(payment_intent_id)
                 send_notification({"title": "No Charge", "body": "No items removed"})
-            mqtt_client.publish(status_topic, f"{transaction_id}:{','.join(items) if items else 'No items'}:${total if items else 0:.2f}")
+            mqtt.publish(status_topic, f"{transaction_id}:{','.join(items) if items else 'No items'}:${total if items else 0:.2f}")
 
-mqtt_client.on_message = on_message
-mqtt_client.subscribe(door_topic)
+mqtt.on_message = on_message
+mqtt.subscribe(door_topic)
 
-# Flask routes
-@app.route("/unlock", methods=["POST"])
-def unlock():
-    transaction_id = request.json.get("id", os.urandom(16).hex())
+class UnlockRequest(BaseModel):
+    id: str = None
+
+@app.post("/unlock")
+async def unlock(request: Request):
+    body = await request.json()
+    transaction_id = body.get("id") or os.urandom(16).hex()
     try:
         payment_intent = stripe.PaymentIntent.create(
             amount=100,
@@ -75,10 +88,9 @@ def unlock():
         transaction_intent[transaction_id] = payment_intent.id
         payload = f"unlock:{transaction_id}"
         hmac_val = hmac.new(hmac_secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
-        mqtt_client.publish(unlock_topic, f"{payload}|{hmac_val}")
-        return jsonify({"status": "success", "transaction_id": transaction_id})
+        mqtt.publish(unlock_topic, f"{payload}|{hmac_val}")
+        return {"status": "success", "transaction_id": transaction_id}
     except stripe.error.StripeError as e:
-        return jsonify({"status": "error", "message": str(e)}), 400
+        raise HTTPException(status_code=400, detail={"status": "error", "message": str(e)})
 
-if __name__ == "__main__":
-    app.run(host=config["server"]["host"], port=config["server"]["port"], debug=False)
+# To run: uvicorn app:app --host 0.0.0.0 --port 5000 --reload
