@@ -5,7 +5,12 @@ import os
 import hmac
 import hashlib
 import logging
-from webpush import send_notification
+from pywebpush import webpush, WebPushException
+import logging
+
+def send_notification(payload):
+    logging.info(f"[Dummy] send_notification called with: {payload}")
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -25,7 +30,7 @@ logging.basicConfig(level=logging.INFO)
 with open("config/config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
-stripe.api_key = config["stripe"]["api_key"]
+stripe.api_key = os.getenv("STRIPE_API_KEY") or config["stripe"]["api_key"]
 mqtt_broker = config["mqtt"]["broker"]
 mqtt_port = config["mqtt"]["port"]
 mqtt_client_id = config["mqtt"]["client_id"]
@@ -92,5 +97,25 @@ async def unlock(request: Request):
         return {"status": "success", "transaction_id": transaction_id}
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail={"status": "error", "message": str(e)})
+
+# Save payment method endpoint
+@app.post("/save-payment")
+async def save_payment(request: Request):
+    try:
+        data = await request.json()
+        payment_method_id = data.get("paymentMethodId")
+        if not payment_method_id:
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Missing paymentMethodId"})
+        # For demo: create a new customer each time (in production, use authenticated user info)
+        customer = stripe.Customer.create()
+        stripe.PaymentMethod.attach(payment_method_id, customer=customer.id)
+        stripe.Customer.modify(customer.id, invoice_settings={"default_payment_method": payment_method_id})
+        return {"status": "success", "customer_id": customer.id}
+    except stripe.error.StripeError as e:
+        logging.error(f"Stripe error: {e}")
+        return JSONResponse(status_code=400, content={"status": "error", "message": str(e)})
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return JSONResponse(status_code=500, content={"status": "error", "message": "Internal server error"})
 
 # To run: uvicorn app:app --host 0.0.0.0 --port 5000 --reload
