@@ -31,6 +31,30 @@ camera:
   framerate: 30
   storage_path: "/sd/videos"
 
+# Training and auto-labeling
+training:
+  dataset_path: "/sd/datasets"
+  model_path:   "/sd/models/rtdetr.pt"
+  base_model:   "rtdetr-l.pt"
+  min_frames:   60
+  # --- auto-label knobs ---
+  autolabel:
+    min_area:      5000      # lowest px² we still consider a product
+    max_area:      0.6       # fraction of frame
+    stable_frames: 5
+    save_aug:      true
+    hand_iou_max:  0.35      # if bounding-box overlaps hand >35 % we shrink it
+    history:       400       # MOG2 history for background subtraction
+    varThreshold:  40        # MOG2 varThreshold
+    cam_ids:       [0, 1]    # Camera device IDs (top-down, bottom-up)
+    restock_pin:   27        # GPIO pin for RESTOCK button
+    led_pin:       23        # GPIO pin for RGB LED feedback
+    led_green:     [0,255,0] # RGB for success
+    led_red:       [255,0,0] # RGB for error
+    timeout_sec:   15        # Max seconds to wait for operator
+    log_path:      "/sd/autolabel_log.jsonl" # Where to write logs
+
+
 # Hardware pins (ESP32-S3)
 pins:
   mosfet: 26

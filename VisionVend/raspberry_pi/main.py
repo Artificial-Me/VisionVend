@@ -22,7 +22,7 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(PIR_PIN, GPIO.IN)
 GPIO.setup(SIGNAL_PIN, GPIO.IN)
 
-# Camera setup
+# Camera setup (for normal operation)
 camera1 = picamera2.Picamera2(0)
 camera2 = picamera2.Picamera2(1)
 camera_config = camera1.create_video_configuration(
@@ -32,6 +32,55 @@ camera1.configure(camera_config)
 camera2.configure(camera_config)
 camera1.set_controls({"FrameRate": config["camera"]["framerate"]})
 camera2.set_controls({"FrameRate": config["camera"]["framerate"]})
+
+# --- Auto-labeling (dual-cam, async) ---
+import asyncio
+from VisionVend.raspberry_pi.capture import capture_frames
+from VisionVend.raspberry_pi.tracker import track_and_save
+
+RESTOCK_PIN = config["training"]["autolabel"]["restock_pin"]
+LED_PIN = config["training"]["autolabel"]["led_pin"]
+LED_GREEN = tuple(config["training"]["autolabel"]["led_green"])
+LED_RED = tuple(config["training"]["autolabel"]["led_red"])
+CAM_IDS = config["training"]["autolabel"]["cam_ids"]
+TIMEOUT = config["training"]["autolabel"]["timeout_sec"]
+
+GPIO.setup(RESTOCK_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(LED_PIN, GPIO.OUT)
+
+# Helper: Set RGB LED (assuming simple GPIO or PWM control)
+def set_led(color):
+    # Dummy implementation: replace with actual RGB LED logic
+    # For now, just print
+    print(f"LED set to: {color}")
+
+async def autolabel_workflow(sku):
+    set_led((0,0,255))  # Blue: in progress
+    stop_event = asyncio.Event()
+    frame_queues = [asyncio.Queue() for _ in CAM_IDS]
+    log_queue = asyncio.Queue()
+    tasks = []
+    for i, cam_id in enumerate(CAM_IDS):
+        tasks.append(asyncio.create_task(capture_frames(cam_id, frame_queues[i], stop_event, log_queue)))
+        tasks.append(asyncio.create_task(track_and_save(cam_id, frame_queues[i], stop_event, sku, log_queue)))
+    try:
+        await asyncio.wait_for(asyncio.gather(*tasks), timeout=TIMEOUT)
+        set_led(LED_GREEN)
+        print("Auto-label success!")
+    except asyncio.TimeoutError:
+        stop_event.set()
+        set_led(LED_RED)
+        print("Auto-label timed out.")
+    # Log output (write to file if desired)
+    logs = []
+    while not log_queue.empty():
+        logs.append(await log_queue.get())
+    if logs:
+        log_path = config["training"]["autolabel"]["log_path"]
+        with open(log_path, "a") as f:
+            for entry in logs:
+                f.write(json.dumps(entry)+"\n")
+
 
 # ML setup
 processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")

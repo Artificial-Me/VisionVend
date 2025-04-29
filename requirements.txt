@@ -7,3 +7,8 @@ pyyaml
 fastapi
 uvicorn
 pydantic
+ultralytics>=8.2.0
+mediapipe==0.10.9
+filterpy>=1.4.5
+lap>=0.4
+scikit-image>=0.23
