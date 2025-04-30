@@ -1,12 +1,51 @@
-from machine import Pin, I2C, ADC
+import os
+SIM = os.getenv("SIMULATE", "0") == "1"
+
+if SIM:
+    # ───── fake hardware ─────
+    import paho.mqtt.client as MQTTClient
+    from VisionVend.raspberry_pi.mock_hw import DummyPin as Pin, DummyHX711 as HX711
+    
+    class network:                     # tiny stub
+        class WLAN:
+            def __init__(self,*_): pass
+            def active(self,*_): pass
+            def connect(self,*_): pass
+            def isconnected(self): return True
+    
+    class SSD1306_I2C:
+        def __init__(self, width, height, i2c):
+            self.width = width
+            self.height = height
+        def text(self, *args): pass
+        def show(self): pass
+    
+    class NeoPixel:
+        def __init__(self, pin, num):
+            self._num = num
+            self._pin = pin
+            self._data = [(0,0,0)] * num
+        def __getitem__(self, idx): return self._data[idx]
+        def __setitem__(self, idx, val): self._data[idx] = val
+        def write(self): pass
+    
+    class ADC:
+        ATTN_11DB = 0
+        def __init__(self, pin): pass
+        def atten(self, *_): pass
+        def read(self): return 2048
+
+else:
+    # ───── real ESP32 imports ─────
+    from machine import Pin, I2C, ADC
+    import network
+    from umqtt.simple import MQTTClient
+    from ssd1306 import SSD1306_I2C
+    from neopixel import NeoPixel
+    from hx711 import HX711
+
 import time
-import network
-import ujson
-from umqtt.simple import MQTTClient
 import yaml
-from ssd1306 import SSD1306_I2C
-from neopixel import NeoPixel
-from hx711 import HX711
 import hmac
 import hashlib
 

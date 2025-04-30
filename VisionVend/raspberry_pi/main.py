@@ -1,12 +1,39 @@
-import cv2
-import picamera2
-from libcamera import controls
-from transformers import DetrImageProcessor, DetrForObjectDetection
-import torch
-import RPi.GPIO as GPIO
+import os
+SIM = os.getenv("SIMULATE", "0") == "1"
+
+if SIM:
+    # ───── fake hardware ─────
+    from VisionVend.raspberry_pi.mock_hw import DummyPin as Pin, DummyADC as ADC, DummyHX711 as HX711
+    import cv2                                     # we will use your laptop webcam
+    GPIO = type("GPIO", (), {"input":lambda *_:0, "setup":lambda *_:None,
+                             "setmode":lambda *_:None, "BCM":None, "cleanup":lambda :None,
+                             "IN": 0, "OUT": 1, "PUD_UP": 0})
+    
+    # Stub for picamera2
+    class Picamera2:
+        def __init__(self, *args, **kwargs): pass
+        def create_video_configuration(self, **kwargs): return {}
+        def configure(self, *args, **kwargs): pass
+        def set_controls(self, *args, **kwargs): pass
+    
+    camera1 = cv2.VideoCapture(0)
+    camera2 = cv2.VideoCapture(0)                  # same cam twice is fine for logic tests
+    
+    # Stub for libcamera
+    class controls:
+        pass
+
+else:
+    # ───── real Pi imports ─────
+    import cv2
+    import picamera2
+    from libcamera import controls
+    from transformers import DetrImageProcessor, DetrForObjectDetection
+    import torch
+    import RPi.GPIO as GPIO
+
 import time
 import yaml
-import os
 import logging
 
 logging.basicConfig(level=logging.INFO)
