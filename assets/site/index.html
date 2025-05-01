@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionVend - Smart Retail Display Case</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom CSS for animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 1s ease-out forwards;
+        }
+        
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50">
+    <!-- Navigation -->
+    <nav class="fixed w-full bg-white shadow-md z-50">
+        <div class="container mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="text-2xl font-bold text-blue-600">VisionVend</div>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex space-x-8">
+                    <a href="#features" class="text-gray-700 hover:text-blue-600 transition">Features</a>
+                    <a href="#how-it-works" class="text-gray-700 hover:text-blue-600 transition">How It Works</a>
+                    <a href="#specs" class="text-gray-700 hover:text-blue-600 transition">Specifications</a>
+                    <a href="about.html" class="text-gray-700 hover:text-blue-600 transition">About</a>
+                    <a href="contact.html" class="text-gray-700 hover:text-blue-600 transition">Contact</a>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <button id="mobile-menu-button" class="md:hidden text-gray-700 focus:outline-none">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4">
+                <a href="#features" class="block py-2 text-gray-700 hover:text-blue-600 transition">Features</a>
+                <a href="#how-it-works" class="block py-2 text-gray-700 hover:text-blue-600 transition">How It Works</a>
+                <a href="#specs" class="block py-2 text-gray-700 hover:text-blue-600 transition">Specifications</a>
+                <a href="about.html" class="block py-2 text-gray-700 hover:text-blue-600 transition">About</a>
+                <a href="contact.html" class="block py-2 text-gray-700 hover:text-blue-600 transition">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-10 md:mb-0 animate-fade-in">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Revolutionize Your Retail Space</h1>
+                    <p class="text-xl text-gray-600 mb-8">VisionVend's smart display case combines cutting-edge object detection with seamless payment solutions to create the ultimate retail experience.</p>
+                    <div class="flex space-x-4">
+                        <a href="#contact" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition shadow-lg">Get a Demo</a>
+                        <a href="#features" class="border border-blue-600 text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-medium transition">Learn More</a>
+                    </div>
+                </div>
+                <div class="md:w-1/2 animate-fade-in delay-100">
+                    <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" 
+                         alt="Smart retail display case" 
+                         class="rounded-xl shadow-2xl border-8 border-white">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 animate-fade-in">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Smart Features for Modern Retail</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">VisionVend combines advanced technology with elegant design to create the perfect retail solution.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-xl transition animate-fade-in delay-100">
+                    <div class="text-blue-600 mb-4">
+                        <i class="fas fa-eye text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Object Detection</h3>
+                    <p class="text-gray-600">Advanced dual-camera system accurately detects when items are removed from the display case, ensuring precise inventory tracking.</p>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-xl transition animate-fade-in delay-200">
+                    <div class="text-green-600 mb-4">
+                        <i class="fas fa-bolt text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Battery Powered</h3>
+                    <p class="text-gray-600">With up to 6 months of battery life, our solution eliminates the need for complex wiring installations.</p>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-xl transition animate-fade-in delay-300">
+                    <div class="text-purple-600 mb-4">
+                        <i class="fas fa-credit-card text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Contactless Payments</h3>
+                    <p class="text-gray-600">Integrated NFC and QR code payment options provide customers with a seamless checkout experience.</p>
+                </div>
+                
+                <!-- Feature 4 -->
+                <div class="bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-xl transition animate-fade-in delay-100">
+                    <div class="text-orange-600 mb-4">
+                        <i class="fas fa-chart-line text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Real-time Analytics</h3>
+                    <p class="text-gray-600">Gain valuable insights into customer behavior and sales patterns with our comprehensive dashboard.</p>
+                </div>
+                
+                <!-- Feature 5 -->
+                <div class="bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-xl transition animate-fade-in delay-200">
+                    <div class="text-red-600 mb-4">
+                        <i class="fas fa-lock text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Secure Design</h3>
+                    <p class="text-gray-600">Tamper-proof construction with anti-theft features protects your valuable merchandise.</p>
+                </div>
+                
+                <!-- Feature 6 -->
+                <div class="bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-xl transition animate-fade-in delay-300">
+                    <div class="text-indigo-600 mb-4">
+                        <i class="fas fa-sync-alt text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Easy Integration</h3>
+                    <p class="text-gray-600">Compatible with most POS systems and retail management software for seamless operation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 animate-fade-in">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Simple Yet Powerful Operation</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">VisionVend makes smart retail effortless with a straightforward three-step process.</p>
+            </div>
+            
+            <div class="flex flex-col md:flex-row justify-center items-center md:items-start space-y-10 md:space-y-0 md:space-x-10">
+                <!-- Step 1 -->
+                <div class="flex flex-col items-center text-center max-w-xs animate-fade-in delay-100">
+                    <div class="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mb-4 text-2xl font-bold">1</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Customer Takes Product</h3>
+                    <p class="text-gray-600">Our advanced object detection system immediately recognizes when an item is removed from the display case.</p>
+                </div>
+                
+                <!-- Arrow -->
+                <div class="hidden md:block text-gray-400 animate-fade-in delay-150">
+                    <i class="fas fa-arrow-right text-3xl"></i>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="flex flex-col items-center text-center max-w-xs animate-fade-in delay-200">
+                    <div class="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mb-4 text-2xl font-bold">2</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Payment Processed</h3>
+                    <p class="text-gray-600">The customer completes payment via NFC tap or QR code scan using their preferred payment method.</p>
+                </div>
+                
+                <!-- Arrow -->
+                <div class="hidden md:block text-gray-400 animate-fade-in delay-250">
+                    <i class="fas fa-arrow-right text-3xl"></i>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="flex flex-col items-center text-center max-w-xs animate-fade-in delay-300">
+                    <div class="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mb-4 text-2xl font-bold">3</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Transaction Complete</h3>
+                    <p class="text-gray-600">The sale is recorded in your system, inventory is updated, and the customer receives a digital receipt.</p>
+                </div>
+            </div>
+            
+            <div class="mt-16 text-center animate-fade-in delay-400">
+                <a href="#contact" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium transition shadow-lg inline-block">Request Pricing Information</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Specifications Section -->
+    <section id="specs" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 animate-fade-in">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Technical Specifications</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">High-quality hardware designed for reliability and performance.</p>
+            </div>
+            
+            <div class="max-w-4xl mx-auto bg-gray-50 rounded-xl shadow-lg overflow-hidden animate-fade-in delay-100">
+                <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                    <!-- Hardware Specs -->
+                    <div class="p-8">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                            <i class="fas fa-microchip text-blue-600 mr-3"></i> Hardware
+                        </h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <span class="font-medium">Processor:</span> Quad-core ARM Cortex-A53
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <span class="font-medium">Memory:</span> 4GB RAM
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <span class="font-medium">Storage:</span> 32GB eMMC
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <span class="font-medium">Cameras:</span> Dual 1080p with IR capability
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <span class="font-medium">Battery:</span> 6 months typical usage
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Connectivity Specs -->
+                    <div class="p-8">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                            <i class="fas fa-wifi text-blue-600 mr-3"></i> Connectivity
+                        </h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <span class="font-medium">Wireless:</span> Wi-Fi 6, Bluetooth 5.2
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <span class="font-medium">NFC:</span> ISO 14443 A/B compliant
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <span class="font-medium">Cellular:</span> Optional 4G LTE module
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <span class="font-medium">Payment:</span> Supports all major NFC/QR payment providers
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
+                                <div>
+                                    <span class="font-medium">Security:</span> End-to-end encryption, PCI DSS compliant
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-12 text-center animate-fade-in delay-200">
+                <p class="text-gray-600 mb-6">Need custom specifications? We can tailor the solution to your exact requirements.</p>
+                <a href="#contact" class="inline-block border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-medium transition">Contact Our Sales Team</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonial/CTA Section -->
+    <section class="py-20 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+        <div class="container mx-auto px-6 text-center">
+            <div class="max-w-3xl mx-auto animate-fade-in">
+                <i class="fas fa-quote-left text-4xl text-blue-200 mb-6"></i>
+                <p class="text-xl md:text-2xl mb-8">"VisionVend transformed our high-end retail space. The seamless checkout experience increased our sales by 22% while reducing staffing costs."</p>
+                <div class="flex items-center justify-center">
+                    <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Sarah Johnson" class="w-12 h-12 rounded-full border-2 border-white">
+                    <div class="ml-4 text-left">
+                        <p class="font-bold">Sarah Johnson</p>
+                        <p class="text-blue-200">Retail Director, Luxe Boutique</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-16 animate-fade-in delay-100">
+                <h2 class="text-3xl font-bold mb-6">Ready to Upgrade Your Retail Experience?</h2>
+                <a href="#contact" class="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-lg font-medium transition shadow-lg inline-block">Schedule a Consultation</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-16 animate-fade-in">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Get In Touch</h2>
+                    <p class="text-xl text-gray-600">Our team is ready to answer your questions and help you implement VisionVend in your retail space.</p>
+                </div>
+                
+                <div class="flex flex-col md:flex-row bg-gray-50 rounded-xl shadow-lg overflow-hidden animate-fade-in delay-100">
+                    <!-- Contact Info -->
+                    <div class="md:w-1/3 bg-blue-600 text-white p-8">
+                        <h3 class="text-xl font-bold mb-6">Contact Information</h3>
+                        
+                        <div class="space-y-6">
+                            <div class="flex items-start">
+                                <i class="fas fa-map-marker-alt mt-1 mr-4"></i>
+                                <div>
+                                    <p class="font-medium">Address</p>
+                                    <p class="text-blue-200">123 Tech Park, Silicon Valley, CA 94000</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <i class="fas fa-envelope mt-1 mr-4"></i>
+                                <div>
+                                    <p class="font-medium">Email</p>
+                                    <p class="text-blue-200">sales@visionvend.com</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <i class="fas fa-phone-alt mt-1 mr-4"></i>
+                                <div>
+                                    <p class="font-medium">Phone</p>
+                                    <p class="text-blue-200">(800) 555-0199</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8">
+                            <h4 class="font-bold mb-4">Follow Us</h4>
+                            <div class="flex space-x-4">
+                                <a href="#" class="text-white hover:text-blue-200 transition"><i class="fab fa-twitter text-xl"></i></a>
+                                <a href="#" class="text-white hover:text-blue-200 transition"><i class="fab fa-linkedin text-xl"></i></a>
+                                <a href="#" class="text-white hover:text-blue-200 transition"><i class="fab fa-facebook text-xl"></i></a>
+                                <a href="#" class="text-white hover:text-blue-200 transition"><i class="fab fa-instagram text-xl"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Form -->
+                    <div class="md:w-2/3 p-8">
+                        <form id="contact-form" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="name" class="block text-gray-700 font-medium mb-2">Name</label>
+                                    <input type="text" id="name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label for="email" class="block text-gray-700 font-medium mb-2">Email</label>
+                                    <input type="email" id="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="company" class="block text-gray-700 font-medium mb-2">Company</label>
+                                <input type="text" id="company" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label for="message" class="block text-gray-700 font-medium mb-2">Message</label>
+                                <textarea id="message" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="consent" class="mr-3">
+                                <label for="consent" class="text-gray-700">I agree to receive communications from VisionVend about this inquiry.</label>
+                            </div>
+                            
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition w-full md:w-auto">Send Message</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">VisionVend</h3>
+                    <p class="text-gray-400">Smart retail solutions for the modern marketplace.</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold mb-4">Product</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#features" class="text-gray-400 hover:text-white transition">Features</a></li>
+                        <li><a href="#how-it-works" class="text-gray-400 hover:text-white transition">How It Works</a></li>
+                        <li><a href="#specs" class="text-gray-400 hover:text-white transition">Specifications</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Pricing</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold mb-4">Company</h4>
+                    <ul class="space-y-2">
+                        <li><a href="about.html" class="text-gray-400 hover:text-white transition">About Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Careers</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Blog</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Press</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold mb-4">Legal</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">Cookie Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 mb-4 md:mb-0">© 2023 VisionVend. All rights reserved.</p>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+
+        // Form submission
+        document.getElementById('contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Thank you for your message! We will get back to you soon.');
+            this.reset();
+        });
+
+        // Simple scroll animation observer
+        const animateElements = document.querySelectorAll('.animate-fade-in');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-fade-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        animateElements.forEach(element => {
+            observer.observe(element);
+        });
+    </script>
+</body>
+</html>
