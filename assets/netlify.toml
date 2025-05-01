@@ -1,5 +1,3 @@
-# Netlify configuration – publish the “assets” folder
-# Netlify configuration – publish the “assets” folder
 [build]
-  command = ""        # no build step
-  publish = "assets"  # deploy the /assets director
+  command = ""     # no build step
+  publish = "assets"
