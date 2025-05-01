@@ -1,559 +1,221 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VisionVend – Camera-Powered Smart Vending</title>
+  <title>VisionVend – Smart Retail Re-imagined</title>
 
-  <!-- Tailwind (CDN) -->
+  <!-- Tailwind CDN (dark glass variables) -->
   <script>
     tailwind.config = {
+      darkMode: "class",
       theme: {
         extend: {
           colors: {
-            primary: "#4f46e5",
-            dark: "#0f172a",
+            glassLight: "rgba(255,255,255,0.12)",
+            glassBorder: "rgba(255,255,255,0.2)"
           },
-          fontFamily: {
-            display: ["Inter", "ui-sans-serif", "system-ui"],
-          },
-        },
-      },
+          backdropBlur: { xs: "2px", sm: "4px" },
+          animation: { float: "float 8s ease-in-out infinite" },
+          keyframes: {
+            float: {
+              "0%,100%": { transform: "translateY(0px)" },
+              "50%":     { transform: "translateY(-15px)" }
+            }
+          }
+        }
+      }
     };
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Font Awesome (icons) -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    integrity="sha512-bYjV5bVoKHFEbqEz8kuvcX3brtrZ9U1k7u0pAGvNsah0ERM9AoN4I9eJqN6HK+Va9B60vddx2x4u1SM+v8n9Qw=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  />
+  <!-- AOS (text fades) -->
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css" />
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
 
-  <!-- Custom tweaks -->
+  <!-- 3-D & animation libraries -->
+  <script src="https://unpkg.com/three@0.156.1/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.156.1/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://unpkg.com/three@0.156.1/examples/js/loaders/DRACOLoader.js"></script>
+  <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+  <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
   <style>
-    html::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
+    html,body{
+      background:
+        radial-gradient(at 30% 20%, rgba(100,72,255,.25), transparent 55%),
+        radial-gradient(at 80% 70%, rgba(0,200,255,.2), transparent 55%),
+        #0b0c10;
+      color:#f1f5f9;
+      scroll-behavior:smooth;
     }
-    html::-webkit-scrollbar-thumb {
-      background: #6366f1;
-      border-radius: 8px;
-    }
-    body.noscroll {
-      overflow: hidden;
+    ::-webkit-scrollbar{display:none}
+    .glass{
+      background:var(--tw-color-glassLight);
+      border:1px solid var(--tw-color-glassBorder);
+      backdrop-filter:blur(6px) saturate(160%);
+      -webkit-backdrop-filter:blur(6px) saturate(160%);
     }
   </style>
 </head>
-<body class="font-display text-gray-700">
-  <!-- ───────────────────── NAVBAR ───────────────────── -->
-  <header
-    class="fixed inset-x-0 top-0 z-50 bg-white/70 backdrop-blur shadow-sm"
-  >
-    <div
-      class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-8"
-    >
-      <a href="#home" class="flex items-center gap-2">
-        <img
-          src="https://raw.githubusercontent.com/Artificial-Me/VisionVend/main/assets/logo.png"
-          alt="VisionVend logo"
-          class="h-8 w-auto"
-        />
-        <span class="text-xl font-bold">
-          Vision<span class="text-primary">Vend</span></span
-        >
-      </a>
 
-      <!-- Desktop links -->
-      <nav class="hidden items-center gap-8 md:flex">
-        <a href="#features" class="hover:text-primary">Features</a>
-        <a href="#how" class="hover:text-primary">How It Works</a>
-        <a href="#faq" class="hover:text-primary">FAQ</a>
-        <a href="#contact" class="hover:text-primary">Contact</a>
-        <a
-          href="#contact"
-          class="rounded-md bg-primary px-5 py-2 text-white shadow hover:bg-primary/90"
-          >Request Demo</a
-        >
-      </nav>
+<body class="relative min-h-screen antialiased selection:bg-indigo-500 selection:text-white">
 
-      <!-- Mobile burger -->
-      <button
-        aria-label="Toggle menu"
-        id="burger"
-        class="text-2xl md:hidden"
-      >
-        <i class="fa-solid fa-bars"></i>
-      </button>
-    </div>
+  <!-- Three.js canvas -->
+  <canvas id="sceneCanvas" class="fixed inset-0 z-10 pointer-events-none"></canvas>
 
-    <!-- Mobile menu -->
-    <div
-      id="mobileMenu"
-      class="hidden flex-col border-t bg-white px-6 py-4 md:hidden"
-    >
-      <a href="#features" class="py-2">Features</a>
-      <a href="#how" class="py-2">How It Works</a>
-      <a href="#faq" class="py-2">FAQ</a>
-      <a href="#contact" class="py-2">Contact</a>
-      <a
-        href="#contact"
-        class="mt-3 rounded-md bg-primary px-4 py-2 text-center text-white"
-        >Request Demo</a
-      >
-    </div>
+  <!-- Decorative blobs -->
+  <span class="absolute left-[-4rem] top-[30vh] w-52 h-52 rounded-full bg-indigo-600/20 blur-2xl animate-float"></span>
+  <span class="absolute right-[-4rem] top-[60vh] w-72 h-72 rounded-full bg-sky-400/20 blur-3xl animate-float [animation-delay:3s]"></span>
+
+  <!-- NAVBAR -->
+  <header class="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-6 py-4 glass backdrop-blur-sm">
+    <h1 class="text-xl font-bold tracking-wide text-indigo-400"><i class="fa-solid fa-eye mr-1"></i> VisionVend</h1>
+    <nav class="hidden md:flex gap-8 text-sm">
+      <a href="#features"  class="hover:text-indigo-400">Features</a>
+      <a href="#walkthrough" class="hover:text-indigo-400">How&nbsp;It&nbsp;Works</a>
+      <a href="#specs"     class="hover:text-indigo-400">Specs</a>
+      <a href="#contact"   class="hover:text-indigo-400">Contact</a>
+    </nav>
+    <button id="mobileBtn" class="md:hidden"><i class="fa-solid fa-bars text-lg"></i></button>
   </header>
 
-  <!-- ───────────────────── HERO ───────────────────── -->
-  <section
-    id="home"
-    class="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-primary to-indigo-300 pt-24 text-white"
-  >
-    <!-- blobs -->
-    <div
-      class="pointer-events-none absolute -left-20 -top-40 h-80 w-80 rounded-full bg-white/10 blur-3xl"
-    ></div>
-    <div
-      class="pointer-events-none absolute bottom-0 right-0 h-56 w-56 rounded-full bg-white/10 blur-2xl"
-    ></div>
-
-    <div class="mx-auto max-w-3xl px-4 text-center">
-      <h1
-        class="text-4xl font-extrabold leading-tight tracking-tight md:text-6xl"
-      >
-        Retrofit ANY fridge into a
-        <span class="text-yellow-300">frictionless</span> vending machine
-      </h1>
-      <p class="mt-6 text-lg text-indigo-50 md:text-xl">
-        Camera-powered tracking. Stripe-secured payments. One tap to unlock,
-        pay only if you remove an item.
-      </p>
-
-      <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-        <button
-          onclick="openVideo()"
-          class="flex items-center gap-2 rounded-md border border-white/30 bg-white/10 px-6 py-3 text-lg backdrop-blur hover:bg-white/20"
-        >
-          <i class="fa-solid fa-circle-play text-2xl text-yellow-300"></i>
-          Watch demo
-        </button>
-        <a
-          href="#contact"
-          class="rounded-md bg-yellow-400 px-6 py-3 text-lg font-semibold text-primary shadow hover:bg-yellow-300"
-        >
-          Book a Call
-        </a>
+  <!-- HERO -->
+  <section id="hero" class="relative flex items-center justify-center min-h-[100vh] px-6">
+    <div class="glass max-w-4xl mx-auto p-10 rounded-3xl shadow-2xl" data-aos="zoom-in">
+      <h2 class="text-4xl font-bold mb-6">Retail that Knows <span class="text-indigo-400">Exactly</span> What’s Happening Inside the Case.</h2>
+      <p class="text-slate-300 mb-8 leading-relaxed">VisionVend fuses AI object-detection with contact-less payments to craft a checkout experience your customers will actually rave about.</p>
+      <div class="flex flex-wrap gap-4">
+        <a href="#contact" class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg shadow-md transition">Get a Demo</a>
+        <a href="#features" class="glass hover:bg-white/10 px-6 py-3 rounded-lg border border-indigo-400/40 backdrop-blur-sm">See Features</a>
       </div>
     </div>
   </section>
 
-  <!-- Video Modal -->
-  <div
-    id="videoModal"
-    class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/70 p-4"
-  >
-    <div class="w-full max-w-2xl overflow-hidden rounded-lg shadow-xl">
-      <div class="relative pb-[56.25%]">
-        <video
-          id="promoVideo"
-          src="https://raw.githubusercontent.com/Artificial-Me/VisionVend/main/assets/product-tracking-example.mp4"
-          class="absolute left-0 top-0 h-full w-full"
-          controls
-        ></video>
-      </div>
-      <button
-        onclick="closeVideo()"
-        class="absolute right-4 top-4 text-3xl text-white"
-        aria-label="Close video"
-      >
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+  <!-- FEATURES -->
+  <section id="features" class="py-24 px-6">
+    <h3 class="text-center text-3xl font-bold mb-16" data-aos="fade-up">Feature Highlights</h3>
+    <div class="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+      <article class="glass p-8 rounded-2xl shadow-lg" data-aos="fade-right">
+        <i class="fa-solid fa-eye text-4xl mb-6 text-indigo-400"></i>
+        <h4 class="text-xl font-semibold mb-2">Dual-Cam Vision</h4>
+        <p class="text-slate-300">1080p and IR cameras detect every product movement in real time.</p>
+      </article>
+      <article class="glass p-8 rounded-2xl shadow-lg" data-aos="fade-up">
+        <i class="fa-solid fa-bolt text-4xl mb-6 text-yellow-400"></i>
+        <h4 class="text-xl font-semibold mb-2">6-Month Battery</h4>
+        <p class="text-slate-300">Forget wiring; run an entire season on one charge.</p>
+      </article>
+      <article class="glass p-8 rounded-2xl shadow-lg" data-aos="fade-left">
+        <i class="fa-solid fa-credit-card text-4xl mb-6 text-teal-400"></i>
+        <h4 class="text-xl font-semibold mb-2">Tap &amp; Go Payments</h4>
+        <p class="text-slate-300">Integrated NFC + QR ensures friction-free checkout in seconds.</p>
+      </article>
     </div>
-  </div>
+  </section>
 
-  <!-- ───────────────────── FEATURES ───────────────────── -->
-  <section id="features" class="bg-gray-50 py-24">
-    <div class="mx-auto max-w-6xl px-4">
-      <h2 class="text-center text-3xl font-bold md:text-4xl">
-        Why VisionVend?
-      </h2>
-      <p class="mx-auto mt-4 max-w-2xl text-center text-gray-600">
-        Our hardware-software stack makes unattended retail effortless for
-        operators and delightful for customers.
-      </p>
+  <!-- HOW IT WORKS + 3-D walkthrough -->
+  <section id="walkthrough" class="relative w-full">
+    <div class="relative z-20 max-w-3xl mx-auto pt-[100vh] pb-32 space-y-[100vh]">
+      <article class="step" data-model="/assets/3D/NFC_terminal.glb /assets/3D/iphone_14_pro.glb">
+        <h2 class="text-3xl font-bold mb-4">1. Tap to Unlock</h2>
+        <p>Shopper taps their phone on the NFC reader; the fridge unlocks and a session begins.</p>
+      </article>
 
-      <div
-        class="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-12"
-      >
-        <!-- card -->
-        <div class="flex flex-col items-center text-center">
-          <i class="fa-solid fa-mobile-screen-button text-primary text-4xl"></i>
-          <h3 class="mt-4 text-xl font-semibold">NFC / QR Unlock</h3>
-          <p class="mt-2 text-gray-600">
-            One-tap access from any smartphone. No apps to install.
-          </p>
-        </div>
-        <!-- card -->
-        <div class="flex flex-col items-center text-center">
-          <i class="fa-solid fa-camera text-primary text-4xl"></i>
-          <h3 class="mt-4 text-xl font-semibold">Dual-Camera CV</h3>
-          <p class="mt-2 text-gray-600">
-            On-device object detection (DETR) with 98 %+ accuracy.
-          </p>
-        </div>
-        <!-- card -->
-        <div class="flex flex-col items-center text-center">
-          <i class="fa-solid fa-scale-balanced text-primary text-4xl"></i>
-          <h3 class="mt-4 text-xl font-semibold">Weight Redundancy</h3>
-          <p class="mt-2 text-gray-600">
-            Four load cells catch edge-cases &amp; ensure zero shrinkage.
-          </p>
-        </div>
-        <!-- card -->
-        <div class="flex flex-col items-center text-center">
-          <i class="fa-solid fa-satellite-dish text-primary text-4xl"></i>
-          <h3 class="mt-4 text-xl font-semibold">LTE Everywhere</h3>
-          <p class="mt-2 text-gray-600">
-            SIM7080G CAT-M/NB-IoT module works in fridges &amp; freezers.
-          </p>
-        </div>
-        <!-- card -->
-        <div class="flex flex-col items-center text-center">
-          <i class="fa-solid fa-lock-open text-primary text-4xl"></i>
-          <h3 class="mt-4 text-xl font-semibold">Fail-Secure Lock</h3>
-          <p class="mt-2 text-gray-600">
-            600 lb mag-lock with super-cap backup. Door auto-relocks in 10 s.
-          </p>
-        </div>
-        <!-- card -->
-        <div class="flex flex-col items-center text-center">
-          <i class="fa-solid fa-credit-card text-primary text-4xl"></i>
-          <h3 class="mt-4 text-xl font-semibold">Stripe Inside</h3>
-          <p class="mt-2 text-gray-600">
-            $1 pre-auth on tap, charge captured only when items are removed.
-          </p>
-        </div>
+      <article class="step" data-model="/assets/3D/electromagnetic_lock.glb">
+        <h2 class="text-3xl font-bold mb-4">2. Door Unlocked</h2>
+        <p>An electromagnetic lock disengages until the door is closed again.</p>
+      </article>
+
+      <article class="step" data-model="/assets/3D/merchandiser_refrigerator.glb">
+        <h2 class="text-3xl font-bold mb-4">3. Grab Your Items</h2>
+        <p>Customer removes what they want from the merchandiser refrigerator.</p>
+      </article>
+
+      <article class="step" data-model="/assets/3D/raspberry_pi_cam.glb /assets/3D/raspberry_pi.glb">
+        <h2 class="text-3xl font-bold mb-4">4. Computer Vision Tracks</h2>
+        <p>Dual cameras plus onboard compute detect every SKU taken or returned.</p>
+      </article>
+
+      <article class="step" data-model="/assets/3D/electronic_reciept.glb">
+        <h2 class="text-3xl font-bold mb-4">5. Auto-Charge &amp; Receipt</h2>
+        <p>The customer’s card is billed, inventory updates, and a digital receipt is sent.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- SPECS -->
+  <section id="specs" class="py-24 px-6">
+    <h3 class="text-center text-3xl font-bold mb-16" data-aos="fade-up">Hardware Specs</h3>
+    <div class="glass max-w-5xl mx-auto grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10 rounded-3xl overflow-hidden" data-aos="zoom-in">
+      <div class="p-10">
+        <h4 class="text-indigo-400 font-semibold mb-4">Core</h4>
+        <ul class="space-y-3 text-slate-300">
+          <li>Quad-core ARM Cortex-A53</li><li>4 GB LPDDR4 RAM</li><li>32 GB eMMC</li>
+        </ul>
+      </div>
+      <div class="p-10">
+        <h4 class="text-indigo-400 font-semibold mb-4">Connectivity</h4>
+        <ul class="space-y-3 text-slate-300">
+          <li>Wi-Fi 6, BT 5.2</li><li>NFC, QR</li><li>Optional 4G/LTE</li>
+        </ul>
       </div>
     </div>
   </section>
 
-  <!-- ───────────────────── HOW IT WORKS ───────────────────── -->
-  <section id="how" class="py-24">
-    <div class="mx-auto max-w-6xl px-4">
-      <h2 class="text-center text-3xl font-bold md:text-4xl">
-        4 Simple Steps
-      </h2>
-
-      <div class="mt-16 grid gap-12 md:grid-cols-2">
-        <!-- Step 1 -->
-        <div class="flex items-start gap-6">
-          <span
-            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-white"
-            >1</span
-          >
-          <div>
-            <h3 class="text-xl font-semibold">Tap your phone</h3>
-            <p class="mt-2 text-gray-600">
-              NFC tag or QR code launches our PWA. Sign-in once, forever
-              frictionless.
-            </p>
-          </div>
-        </div>
-        <!-- Step 2 -->
-        <div class="flex items-start gap-6">
-          <span
-            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-white"
-            >2</span
-          >
-          <div>
-            <h3 class="text-xl font-semibold">Door unlocks</h3>
-            <p class="mt-2 text-gray-600">
-              VisionVend pre-authorises $1 via Stripe and energises the
-              mag-lock.
-            </p>
-          </div>
-        </div>
-        <!-- Step 3 -->
-        <div class="flex items-start gap-6">
-          <span
-            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-white"
-            >3</span
-          >
-          <div>
-            <h3 class="text-xl font-semibold">Grab &amp; go</h3>
-            <p class="mt-2 text-gray-600">
-              Dual cameras + weight sensors compare “before vs after” to detect
-              removed SKUs.
-            </p>
-          </div>
-        </div>
-        <!-- Step 4 -->
-        <div class="flex items-start gap-6">
-          <span
-            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-white"
-            >4</span
-          >
-          <div>
-            <h3 class="text-xl font-semibold">Receipt in seconds</h3>
-            <p class="mt-2 text-gray-600">
-              Stripe captures payment; Web-push &amp; OLED show itemised
-              receipt. No items? No charge.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── STATS / SOCIAL PROOF ───────────────────── -->
-  <section class="bg-primary py-20 text-white">
-    <div
-      class="mx-auto flex max-w-5xl flex-wrap items-center justify-around gap-10 px-4 text-center"
-    >
-      <div>
-        <p class="text-5xl font-extrabold">10 s</p>
-        <p class="mt-1 text-lg opacity-80">Average door-open time</p>
-      </div>
-      <div>
-        <p class="text-5xl font-extrabold">98 %</p>
-        <p class="mt-1 text-lg opacity-80">CV detection accuracy</p>
-      </div>
-      <div>
-        <p class="text-5xl font-extrabold">24 / 7</p>
-        <p class="mt-1 text-lg opacity-80">Unattended operation</p>
-      </div>
-      <div>
-        <p class="text-5xl font-extrabold">60 s</p>
-        <p class="mt-1 text-lg opacity-80">Install time (no tools)</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── FAQ ───────────────────── -->
-  <section id="faq" class="py-24 bg-gray-50">
-    <div class="mx-auto max-w-4xl px-4">
-      <h2 class="text-center text-3xl font-bold md:text-4xl">FAQ</h2>
-
-      <div class="mt-10 space-y-4">
-        <details
-          class="overflow-hidden rounded-lg bg-white shadow-sm [&[open]>summary_svg]:rotate-180"
-        >
-          <summary
-            class="flex cursor-pointer items-center justify-between gap-2 px-6 py-4 text-lg font-medium"
-          >
-            Which fridges or freezers are compatible?
-            <svg
-              class="h-5 w-5 transition-transform duration-300"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </summary>
-          <div class="border-t px-6 py-4 text-gray-600">
-            Any glass-door unit with <strong>&lt;30 mm</strong> frame depth.
-            VisionVend attaches with VHB tape—no drilling.
-          </div>
-        </details>
-
-        <details
-          class="overflow-hidden rounded-lg bg-white shadow-sm [&[open]>summary_svg]:rotate-180"
-        >
-          <summary
-            class="flex cursor-pointer items-center justify-between gap-2 px-6 py-4 text-lg font-medium"
-          >
-            How long do the batteries last?
-            <svg
-              class="h-5 w-5 transition-transform duration-300"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </summary>
-          <div class="border-t px-6 py-4 text-gray-600">
-            24-48 h on Li-po batteries, but we ship with USB-C power supply for
-            continuous use. Super-capacitor keeps the lock closed if mains
-            fails.
-          </div>
-        </details>
-
-        <details
-          class="overflow-hidden rounded-lg bg-white shadow-sm [&[open]>summary_svg]:rotate-180"
-        >
-          <summary
-            class="flex cursor-pointer items-center justify-between gap-2 px-6 py-4 text-lg font-medium"
-          >
-            Can it work offline?
-            <svg
-              class="h-5 w-5 transition-transform duration-300"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </summary>
-          <div class="border-t px-6 py-4 text-gray-600">
-            Yes. Object detection runs locally; if LTE is down, transactions are
-            queued and sync automatically once re-connected.
-          </div>
-        </details>
-
-        <details
-          class="overflow-hidden rounded-lg bg-white shadow-sm [&[open]>summary_svg]:rotate-180"
-        >
-          <summary
-            class="flex cursor-pointer items-center justify-between gap-2 px-6 py-4 text-lg font-medium"
-          >
-            How do I add new products?
-            <svg
-              class="h-5 w-5 transition-transform duration-300"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </summary>
-          <div class="border-t px-6 py-4 text-gray-600">
-            Add a row to the Google Sheet, press “Restock-Train”, close the
-            door. VisionVend captures 120 frames and retrains overnight.
-          </div>
-        </details>
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────────────────── CONTACT ───────────────────── -->
-  <section id="contact" class="py-24">
-    <div class="mx-auto max-w-4xl px-4">
-      <h2 class="text-center text-3xl font-bold md:text-4xl">Get in Touch</h2>
-      <p class="mx-auto mt-3 max-w-lg text-center text-gray-600">
-        Tell us about your venue &amp; we’ll spin up a pilot in days—not
-        months.
-      </p>
-
-      <form
-        action="https://formspree.io/f/maykzpqe"
-        method="POST"
-        class="mt-12 space-y-6"
-      >
-        <div
-          class="grid gap-6 sm:grid-cols-2"
-        >
-          <input
-            required
-            type="text"
-            name="name"
-            placeholder="Full name"
-            class="w-full rounded-md border px-4 py-3 outline-primary"
-          />
-          <input
-            required
-            type="email"
-            name="email"
-            placeholder="Work email"
-            class="w-full rounded-md border px-4 py-3 outline-primary"
-          />
-        </div>
-        <input
-          type="text"
-          name="company"
-          placeholder="Company / Venue"
-          class="w-full rounded-md border px-4 py-3 outline-primary"
-        />
-        <textarea
-          name="message"
-          rows="4"
-          placeholder="Tell us about your use-case…"
-          class="w-full rounded-md border px-4 py-3 outline-primary"
-        ></textarea>
-
-        <button
-          type="submit"
-          class="w-full rounded-md bg-primary px-6 py-3 text-lg font-semibold text-white shadow hover:bg-primary/90"
-        >
-          Request Demo
-        </button>
+  <!-- CONTACT -->
+  <section id="contact" class="py-24 px-6">
+    <div class="glass max-w-3xl mx-auto p-10 rounded-3xl shadow-lg" data-aos="fade-up">
+      <h3 class="text-3xl font-bold mb-6 text-center">Let’s Talk</h3>
+      <form class="space-y-6">
+        <input type="text" placeholder="Name"  class="w-full glass px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"/>
+        <input type="email"placeholder="Email" class="w-full glass px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"/>
+        <textarea rows="4" placeholder="Message" class="w-full glass px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        <button type="submit" class="block w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-lg transition">Send Message</button>
       </form>
     </div>
   </section>
 
-  <!-- ───────────────────── FOOTER ───────────────────── -->
-  <footer class="bg-dark py-10 text-gray-400">
-    <div
-      class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 md:flex-row"
-    >
-      <div class="text-center md:text-start">
-        © 2025 VisionVend Inc. All rights reserved.
-      </div>
+  <!-- FOOTER -->
+  <footer class="py-10 text-center text-xs text-slate-500">© 2024 VisionVend – All rights reserved.</footer>
 
-      <div class="flex items-center gap-6 text-xl">
-        <a
-          href="https://github.com/Artificial-Me/VisionVend"
-          target="_blank"
-          class="hover:text-white"
-          ><i class="fa-brands fa-github"></i
-        ></a>
-        <a
-          href="https://www.linkedin.com/company/visionvend"
-          target="_blank"
-          class="hover:text-white"
-          ><i class="fa-brands fa-linkedin"></i
-        ></a>
-        <a
-          href="mailto:hello@visionvend.io"
-          class="hover:text-white"
-          ><i class="fa-solid fa-envelope"></i
-        ></a>
-      </div>
-    </div>
-  </footer>
-
-  <!-- ───────────────────── JS ───────────────────── -->
+  <!-- Init AOS & mobile nav -->
   <script>
-    // Mobile menu toggle
-    const burger = document.getElementById("burger");
-    const mobileMenu = document.getElementById("mobileMenu");
-    burger.addEventListener("click", () => {
-      mobileMenu.classList.toggle("hidden");
-      burger.innerHTML = mobileMenu.classList.contains("hidden")
-        ? '<i class="fa-solid fa-bars"></i>'
-        : '<i class="fa-solid fa-xmark"></i>';
+    document.addEventListener('DOMContentLoaded',()=>{
+      AOS.init({ duration:800, once:true, easing:'ease-out-quart' });
+      document.getElementById('mobileBtn')
+        .addEventListener('click',()=>document.querySelector('nav').classList.toggle('hidden'));
     });
+  </script>
 
-    // Video modal
-    const modal = document.getElementById("videoModal");
-    const promoVideo = document.getElementById("promoVideo");
-
-    function openVideo() {
-      modal.classList.remove("hidden");
-      document.body.classList.add("noscroll");
-      promoVideo.currentTime = 0;
-      promoVideo.play();
-    }
-    function closeVideo() {
-      modal.classList.add("hidden");
-      document.body.classList.remove("noscroll");
-      promoVideo.pause();
-    }
-    // Close on ESC / backdrop
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeVideo();
-    });
-    document.addEventListener("keyup", (e) => {
-      if (e.key === "Escape" && !modal.classList.contains("hidden"))
-        closeVideo();
-    });
+  <!-- 3-D scroll engine -->
+  <script>
+  (()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const c=document.getElementById('sceneCanvas'),scene=new THREE.Scene(),
+  cam=new THREE.PerspectiveCamera(35,innerWidth/innerHeight,.1,100);cam.position.set(0,0,6);
+  const r=new THREE.WebGLRenderer({canvas:c,alpha:true,antialias:true,powerPreference:'high-performance'});
+  r.setPixelRatio(Math.min(devicePixelRatio,2));r.setSize(innerWidth,innerHeight);
+  addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();r.setSize(innerWidth,innerHeight);});
+  scene.add(new THREE.HemisphereLight(0xffffff,0x404040,.8));const dl=new THREE.DirectionalLight(0xffffff,1.2);dl.position.set(3,2.5,5);scene.add(dl);
+  const gltfL=new THREE.GLTFLoader(),dracoL=new THREE.DRACOLoader();dracoL.setDecoderPath('https://unpkg.com/three@0.156.1/examples/js/libs/draco/');gltfL.setDRACOLoader(dracoL);
+  const CACHE={},load=u=>CACHE[u]?Promise.resolve(CACHE[u]):new Promise((res,rej)=>gltfL.load(u,g=>{const s=g.scene;scale(s);CACHE[u]=s;res(s);},undefined,e=>{console.error(u,e);rej(e);})),
+  scale=o=>{const b=new THREE.Box3().setFromObject(o),s=b.getSize(new THREE.Vector3()).length();o.scale.setScalar(2/s)};
+  gsap.registerPlugin(ScrollTrigger);
+  const steps=[...document.querySelectorAll('.step')],camPos=[{x:0,y:0,z:5},{x:0,y:.3,z:4.6},{x:0,y:-.2,z:5.2},{x:.2,y:.1,z:4.8},{x:0,y:0,z:5}];
+  let grp=null;async function swap(p){if(grp){gsap.to(grp,{opacity:0,duration:.4,onComplete:()=>{scene.remove(grp);grp=null;}});}
+  grp=new THREE.Group();grp.opacity=0;scene.add(grp);
+  for(const m of p){try{grp.add((await load(m)).clone())}catch{}}
+  grp.traverse(x=>{if(x.isMesh){x.material=x.material.clone();x.material.transparent=true;Object.defineProperty(x.material,'opacity',{get(){return grp.opacity},set(v){grp.opacity=v}})}});
+  gsap.to(grp,{opacity:1,duration:.6});}
+  (window.requestIdleCallback||setTimeout)(()=>steps.forEach(s=>s.dataset.model.split(' ').forEach(load)),1);
+  steps.forEach((s,i)=>{const m=s.dataset.model.trim().split(/\s+/);ScrollTrigger.create({trigger:s,start:'top center',end:'bottom center',
+  onEnter:()=>{swap(m);move(i)},onEnterBack:()=>{swap(m);move(i)}});});
+  function move(i){const p=camPos[i]||camPos.at(-1);gsap.to(cam.position,{...p,duration:1.2,ease:'power3.out'});}
+  (function loop(){requestAnimationFrame(loop);if(grp)grp.rotation.y+=.003;r.render(scene,cam);})();
+  })();
   </script>
 </body>
 </html>
