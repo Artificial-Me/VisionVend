@@ -33,10 +33,7 @@
   <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css" />
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
 
-  <!-- 3-D & animation libraries -->
-  <script src="https://unpkg.com/three@0.156.1/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.156.1/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://unpkg.com/three@0.156.1/examples/js/loaders/DRACOLoader.js"></script>
+  <!-- Animation libraries (GSAP only, no 3D) -->
   <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
   <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
 
@@ -64,8 +61,6 @@
 
 <body class="relative min-h-screen antialiased selection:bg-indigo-500 selection:text-white">
 
-  <!-- Three.js canvas -->
-  <canvas id="sceneCanvas" class="fixed inset-0 z-10 pointer-events-none"></canvas>
 
   <!-- Decorative blobs -->
   <span class="absolute left-[-4rem] top-[30vh] w-52 h-52 rounded-full bg-indigo-600/20 blur-2xl animate-float"></span>
@@ -122,12 +117,12 @@
   <!-- HOW IT WORKS (3-D walkthrough) -->
   <section id="walkthrough" class="relative w-full">
     <div class="relative z-20 max-w-3xl mx-auto pt-[100vh] pb-32 space-y-[100vh]">
-      <article class="step" data-model="/assets/3D/NFC_terminal.glb /assets/3D/iphone_14_pro.glb">
+      <article class="step">
         <h2 class="text-3xl font-bold mb-4">1. Tap to Unlock</h2>
         <p>Shopper taps their phone on the NFC reader; the fridge unlocks and a session begins.</p>
       </article>
 
-      <article class="step" data-model="/assets/3D/electromagnetic_lock.glb">
+      <article class="step">
         <h2 class="text-3xl font-bold mb-4">2. Door Unlocked</h2>
         <p>An electromagnetic lock disengages until the door is closed again.</p>
       </article>
@@ -137,12 +132,12 @@
         <p>Customer removes what they want from the merchandiser refrigerator.</p>
       </article>
 
-      <article class="step" data-model="/assets/3D/raspberry_pi_cam.glb /assets/3D/raspberry_pi.glb">
+      <article class="step">
         <h2 class="text-3xl font-bold mb-4">4. Computer Vision Tracks</h2>
         <p>Dual cameras plus onboard compute detect every SKU taken or returned.</p>
       </article>
 
-      <article class="step" data-model="/assets/3D/electronic_reciept.glb">
+      <article class="step">
         <h2 class="text-3xl font-bold mb-4">5. Auto-Charge &amp; Receipt</h2>
         <p>The customer’s card is billed, inventory updates, and a digital receipt is sent.</p>
       </article>
@@ -193,44 +188,6 @@
     });
   </script>
 
-  <!-- 3-D scroll engine -->
-  <script>
-  (()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-  const c=document.getElementById('sceneCanvas'),scene=new THREE.Scene(),
-        cam=new THREE.PerspectiveCamera(35,innerWidth/innerHeight,.1,100);
-  cam.position.set(0,0,6);
-  const r=new THREE.WebGLRenderer({canvas:c,alpha:true,antialias:true,powerPreference:'high-performance'});
-  r.setPixelRatio(Math.min(devicePixelRatio,2));r.setSize(innerWidth,innerHeight);
-  addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();r.setSize(innerWidth,innerHeight);});
-  scene.add(new THREE.HemisphereLight(0xffffff,0x404040,.8));
-  const dl=new THREE.DirectionalLight(0xffffff,1.2);dl.position.set(3,2.5,5);scene.add(dl);
 
-  const gltfL=new THREE.GLTFLoader(),dracoL=new THREE.DRACOLoader();
-  dracoL.setDecoderPath('https://unpkg.com/three@0.156.1/examples/js/libs/draco/');
-  gltfL.setDRACOLoader(dracoL);
-  const CACHE={},load=u=>CACHE[u]?Promise.resolve(CACHE[u]):new Promise((res,rej)=>
-    gltfL.load(u,g=>{const s=g.scene;scale(s);CACHE[u]=s;res(s);},undefined,e=>{console.error(u,e);rej(e);})),
-        scale=o=>{const b=new THREE.Box3().setFromObject(o),s=b.getSize(new THREE.Vector3()).length();o.scale.setScalar(2/s)};
-
-  gsap.registerPlugin(ScrollTrigger);
-  const steps=[...document.querySelectorAll('.step')],
-        camPos=[{x:0,y:0,z:5},{x:0,y:.3,z:4.6},{x:0,y:-.2,z:5.2},{x:.2,y:.1,z:4.8},{x:0,y:0,z:5}];
-  let grp=null;
-  async function swap(p){
-    if(grp){gsap.to(grp,{opacity:0,duration:.4,onComplete:()=>{scene.remove(grp);grp=null;}});}
-    grp=new THREE.Group();grp.opacity=0;scene.add(grp);
-    for(const m of p){try{grp.add((await load(m)).clone())}catch{}}
-    grp.traverse(x=>{if(x.isMesh){x.material=x.material.clone();x.material.transparent=true;
-      Object.defineProperty(x.material,'opacity',{get(){return grp.opacity},set(v){grp.opacity=v}});} });
-    gsap.to(grp,{opacity:1,duration:.6});
-  }
-  (window.requestIdleCallback||setTimeout)(()=>steps.forEach(s=>s.dataset.model.split(' ').forEach(load)),1);
-  steps.forEach((s,i)=>{const m=s.dataset.model.trim().split(/\s+/);
-    ScrollTrigger.create({trigger:s,start:'top center',end:'bottom center',
-      onEnter:()=>{swap(m);move(i)},onEnterBack:()=>{swap(m);move(i)}});});
-  function move(i){const p=camPos[i]||camPos.at(-1);gsap.to(cam.position,{...p,duration:1.2,ease:'power3.out'});}
-  (function loop(){requestAnimationFrame(loop);if(grp)grp.rotation.y+=.003;r.render(scene,cam);})();
-  })();
-  </script>
 </body>
 </html>
