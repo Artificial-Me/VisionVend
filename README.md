@@ -1,5 +1,5 @@
 
-![VisionVend Logo](assets/logo-neonpunk_enhanced.jpeg)
+![VisionVend Logo](assets/logo-neonpunk.PNG)
 
 # VisionVend
 
