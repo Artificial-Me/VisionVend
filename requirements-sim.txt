@@ -1,6 +1,0 @@
-paho-mqtt
-opencv-python
-numpy
-PyYAML
-transformers
-torch

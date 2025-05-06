@@ -1,4 +1,10 @@
+--extra-index-url https://download.pytorch.org/whl/nightly/cu126
 torch
+torchvision
+torchaudio
+supervision
+trackers[deepsort,cu126]
+git+https://github.com/huggingface/transformers.git
 opencv-python
 Pillow
 gspread
@@ -7,8 +13,10 @@ pyyaml
 fastapi
 uvicorn
 pydantic
-ultralytics>=8.2.0
-mediapipe==0.10.9
-filterpy>=1.4.5
-lap>=0.4
-scikit-image>=0.23
+mediapipe
+filterpy
+lap
+scikit-image
+huggingface-hub
+alive-progress
+python-dotenv

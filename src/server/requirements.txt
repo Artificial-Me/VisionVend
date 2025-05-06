@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+paho-mqtt==1.6.1
+pyyaml==6.0.1
+stripe==5.5.0
+pywebpush==1.13.0
