@@ -1,9 +1,9 @@
---extra-index-url https://download.pytorch.org/whl/nightly/cu128
+--extra-index-url https://download.pytorch.org/whl/nightly/cu126
 torch
 torchvision
 torchaudio
-supervision>=0.26.0rc6
-trackers>=2.0.0
+supervision
+trackers[deepsort,cu126]
 git+https://github.com/huggingface/transformers.git
 opencv-python
 Pillow
@@ -19,3 +19,4 @@ lap
 scikit-image
 huggingface-hub
 alive-progress
+python-dotenv
