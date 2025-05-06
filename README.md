@@ -2,6 +2,7 @@
 
 ![VisionVend Logo](assets/logo-neonpunk.PNG)
 
+<<<<<<< HEAD
 ## Table of Contents
 
 - [Overview](#overview)
@@ -1645,3 +1646,6 @@ return response ||fetch(event.request);
 **Conclusion**
 
 **This PWA design delivers a frictionless, secure, and accessible interface for your retail display case system, integrating seamlessly with the battery-powered, dual-camera, Raspberry Pi 4-based setup. It supports NFC/QR tap-to-unlock, Stripe payments, and real-time feedback, with a lightweight (~100KB) and offline-capable architecture. The UI is intuitive, mirroring on-device OLED messages while adding digital receipts and Web Push notifications. The PWA enhances user trust and accessibility, ensuring compatibility with diverse devices and retail environments (e.g., fridges/freezers).**
+=======
+VisionVend is a Smart Vending Machine Hardware and Software service that lets owner/operators retrofit their product display cases, refrigerators, or freezers to allow unattended sales of their inventory.
+>>>>>>> dd3befca88ffd46e128bbfe8d019dec110f53574
