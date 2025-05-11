@@ -13,10 +13,15 @@ pyyaml
 fastapi
 uvicorn
 pydantic
-mediapipe
+# mediapipe
 filterpy
 lap
 scikit-image
 huggingface-hub
 alive-progress
 python-dotenv
+# Dependencies for server/app.py (if not covered by other more specific requirements files)
+paho-mqtt
+stripe
+pywebpush
+aiosqlite
