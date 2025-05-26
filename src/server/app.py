@@ -18,11 +18,15 @@ from collections import Counter
 import aiosqlite
 import json
 import asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from database import get_db, create_tables, async_session_maker
+from models import Transaction, Device, Product, TransactionItem, TransactionStatus, PaymentStatus
 
 def send_notification(payload):
     logging.info(f"[Dummy] send_notification called with: {payload}")
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
@@ -41,7 +45,7 @@ app.add_middleware(
 logging.basicConfig(level=logging.INFO)
 
 # Load config
-CONFIG_FILE_PATH = "config/config.yaml" 
+CONFIG_FILE_PATH = "../config/config.yaml" 
 with open(CONFIG_FILE_PATH, "r") as f:
     config = yaml.safe_load(f)
 
@@ -144,52 +148,39 @@ def append_sale_row(sku: str, qty: int, tx_id: str):
 
 # --- Google Sheets Integration END ---
 
-# --- SQLite Database Integration START ---
-DATABASE_URL = "transactions.db" # Will be created in the same directory as app.py
-DB_CONN = None
+# --- Database Integration START ---
 
-async def get_db_connection():
-    global DB_CONN
-    if DB_CONN is None:
-        DB_CONN = await aiosqlite.connect(DATABASE_URL)
-        DB_CONN.row_factory = aiosqlite.Row # Access columns by name
-    return DB_CONN
+@app.on_event("startup")
+async def startup():
+    await create_tables()
+    logging.info("Database tables created.")
 
-async def init_db():
-    db = await get_db_connection()
-    await db.execute("""
-    CREATE TABLE IF NOT EXISTS transactions (
-        transaction_id TEXT PRIMARY KEY,
-        payment_intent_id TEXT NOT NULL,
-        items_json TEXT,                     -- Store items as a JSON string
-        status TEXT NOT NULL,                -- e.g., 'pending_items', 'captured', 'cancelled', 'error'
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    await db.execute("""
-    CREATE TRIGGER IF NOT EXISTS update_transactions_updated_at
-    AFTER UPDATE ON transactions
-    FOR EACH ROW
-    BEGIN
-        UPDATE transactions SET updated_at = CURRENT_TIMESTAMP WHERE transaction_id = OLD.transaction_id;
-    END;
-    """)
-    await db.commit()
-    logging.info("Database initialized and 'transactions' table ensured.")
+async def get_default_device(db: AsyncSession) -> Device:
+    """Get or create default device"""
+    result = await db.execute(select(Device).where(Device.device_id == "default"))
+    device = result.scalar_one_or_none()
+    
+    if not device:
+        device = Device(
+            device_id="default",
+            name="Main Vending Machine",
+            location="Default Location"
+        )
+        db.add(device)
+        await db.commit()
+        await db.refresh(device)
+    
+    return device
 
-async def close_db_connection():
-    global DB_CONN
-    if DB_CONN:
-        await DB_CONN.close()
-        DB_CONN = None
-        logging.info("Database connection closed.")
-
-# --- SQLite Database Integration END ---
+# --- Database Integration END ---
 
 # MQTT client setup
 mqtt = mqtt_client.Client(mqtt_client_id)
-mqtt.connect(mqtt_broker, mqtt_port)
+try:
+    mqtt.connect(mqtt_broker, mqtt_port)
+    logging.info(f"Connected to MQTT broker at {mqtt_broker}:{mqtt_port}")
+except Exception as e:
+    logging.warning(f"Could not connect to MQTT broker: {e}. Running without MQTT.")
 
 # Validate MQTT payload
 def validate_hmac(payload, received_hmac):
@@ -204,82 +195,83 @@ async def process_mqtt_message(payload_str: str, mqtt_client_ref):
     items = [item.strip() for item in items if item.strip()]
     # delta_mass = float(delta_mass_str) # Not used directly in this logic path after split
 
-    db = await get_db_connection()
-    transaction_record = None
-    try:
-        async with db.execute("SELECT payment_intent_id, status FROM transactions WHERE transaction_id = ?", (transaction_id,)) as cursor:
-            transaction_record = await cursor.fetchone()
-    except Exception as e:
-        logging.error(f"Error fetching transaction {transaction_id} from DB: {e}")
-        # Consider how to signal error back if needed, as this is fire-and-forget
-        return
-
-    if not transaction_record:
-        logging.warning(f"Transaction {transaction_id} not found in database. Ignoring message.")
-        return
-
-    payment_intent_id = transaction_record["payment_intent_id"]
-    current_status = transaction_record["status"]
-
-    if current_status != 'pending_items':
-        logging.warning(f"Transaction {transaction_id} already processed or in unexpected state: {current_status}. Ignoring.")
-        return
-
-    # Ensure config is accessible; it's global so it should be fine.
-    total = sum(config.get("inventory", {}).get(item, {"price": 0})["price"] for item in items)
-    items_json = json.dumps(items)
-    new_status = ''
-
-    try:
-        if items and payment_intent_id:
-            total_cents = int(total * 100)
-            stripe.PaymentIntent.modify(payment_intent_id, amount=max(total_cents, 50))
-            stripe.PaymentIntent.capture(payment_intent_id)
-            send_notification({"title": "Receipt", "body": f"Items: {', '.join(items)}, Total: ${total:.2f}"})
-            new_status = 'captured'
-            if GSHEET_ENABLED:
-                item_counts = Counter(items)
-                for sku_item, qty_removed in item_counts.items():
-                    append_sale_row(sku_item, qty_removed, transaction_id) # append_sale_row is synchronous
-        elif payment_intent_id:
-            stripe.PaymentIntent.cancel(payment_intent_id)
-            send_notification({"title": "No Charge", "body": "No items removed"})
-            new_status = 'cancelled'
-        else:
-            logging.error(f"No payment_intent_id for transaction {transaction_id} during processing.")
-            new_status = 'error_no_intent_id'
-        
-        await db.execute("UPDATE transactions SET status = ?, items_json = ? WHERE transaction_id = ?", 
-                         (new_status, items_json, transaction_id))
-        await db.commit()
-        logging.info(f"Transaction {transaction_id} status updated to {new_status}.")
-
-    except stripe.error.StripeError as e:
-        logging.error(f"Stripe error for transaction {transaction_id}: {e}")
-        new_status = 'error_stripe'
+    async with async_session_maker() as db:
         try:
-            await db.execute("UPDATE transactions SET status = ?, items_json = ? WHERE transaction_id = ?", 
-                             (new_status, items_json, transaction_id))
-            await db.commit()
-        except Exception as db_err:
-            logging.error(f"Failed to update transaction {transaction_id} status to {new_status} after Stripe error: {db_err}")
-    except Exception as e:
-        logging.error(f"General error processing transaction {transaction_id}: {e}")
-        new_status = 'error_general'
+            result = await db.execute(
+                select(Transaction).where(Transaction.transaction_id == transaction_id)
+            )
+            transaction_record = result.scalar_one_or_none()
+        except Exception as e:
+            logging.error(f"Error fetching transaction {transaction_id} from DB: {e}")
+            return
+
+        if not transaction_record:
+            logging.warning(f"Transaction {transaction_id} not found in database. Ignoring message.")
+            return
+
+        payment_intent_id = transaction_record.payment_intent_id
+        current_status = transaction_record.status
+
+        if current_status != TransactionStatus.PENDING_ITEMS:
+            logging.warning(f"Transaction {transaction_id} already processed or in unexpected state: {current_status}. Ignoring.")
+            return
+
+        # Ensure config is accessible; it's global so it should be fine.
+        total = sum(config.get("inventory", {}).get(item, {"price": 0})["price"] for item in items)
+        items_json = json.dumps(items)
+        new_status = ''
+
         try:
-            await db.execute("UPDATE transactions SET status = ?, items_json = ? WHERE transaction_id = ?", 
-                             (new_status, items_json, transaction_id))
+            if items and payment_intent_id:
+                total_cents = int(total * 100)
+                stripe.PaymentIntent.modify(payment_intent_id, amount=max(total_cents, 50))
+                stripe.PaymentIntent.capture(payment_intent_id)
+                send_notification({"title": "Receipt", "body": f"Items: {', '.join(items)}, Total: ${total:.2f}"})
+                new_status = TransactionStatus.CAPTURED
+                if GSHEET_ENABLED:
+                    item_counts = Counter(items)
+                    for sku_item, qty_removed in item_counts.items():
+                        append_sale_row(sku_item, qty_removed, transaction_id) # append_sale_row is synchronous
+            elif payment_intent_id:
+                stripe.PaymentIntent.cancel(payment_intent_id)
+                send_notification({"title": "No Charge", "body": "No items removed"})
+                new_status = TransactionStatus.CANCELLED
+            else:
+                logging.error(f"No payment_intent_id for transaction {transaction_id} during processing.")
+                new_status = TransactionStatus.ERROR
+            
+            transaction_record.status = new_status
+            transaction_record.items_json = items_json
+            transaction_record.total_amount = total
             await db.commit()
-        except Exception as db_err:
-            logging.error(f"Failed to update transaction {transaction_id} status to {new_status} after general error: {db_err}")
-    finally:
-        # Publish status via MQTT client passed as reference
-        if new_status.startswith('error'):
-            mqtt_client_ref.publish(status_topic, f"{transaction_id}:ERROR")
-        elif new_status == 'captured':
-            mqtt_client_ref.publish(status_topic, f"{transaction_id}:CAPTURED:{total:.2f}")
-        elif new_status == 'cancelled':
-            mqtt_client_ref.publish(status_topic, f"{transaction_id}:CANCELLED")
+            logging.info(f"Transaction {transaction_id} status updated to {new_status}.")
+
+        except stripe.error.StripeError as e:
+            logging.error(f"Stripe error for transaction {transaction_id}: {e}")
+            new_status = TransactionStatus.ERROR
+            try:
+                transaction_record.status = new_status
+                transaction_record.items_json = items_json
+                await db.commit()
+            except Exception as db_err:
+                logging.error(f"Failed to update transaction {transaction_id} status to {new_status} after Stripe error: {db_err}")
+        except Exception as e:
+            logging.error(f"General error processing transaction {transaction_id}: {e}")
+            new_status = TransactionStatus.ERROR
+            try:
+                transaction_record.status = new_status
+                transaction_record.items_json = items_json
+                await db.commit()
+            except Exception as db_err:
+                logging.error(f"Failed to update transaction {transaction_id} status to {new_status} after general error: {db_err}")
+        finally:
+            # Publish status via MQTT client passed as reference
+            if new_status == TransactionStatus.ERROR:
+                mqtt_client_ref.publish(status_topic, f"{transaction_id}:ERROR")
+            elif new_status == TransactionStatus.CAPTURED:
+                mqtt_client_ref.publish(status_topic, f"{transaction_id}:CAPTURED:{total:.2f}")
+            elif new_status == TransactionStatus.CANCELLED:
+                mqtt_client_ref.publish(status_topic, f"{transaction_id}:CANCELLED")
 
 def on_message(client, userdata, msg):
     if msg.topic == door_topic:
@@ -309,17 +301,10 @@ async def startup_event():
     else:
         logging.warning("Google Sheets integration is disabled. Periodic sync will not run.")
     
-    # Initialize Database
-    await init_db()
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    # Close Database Connection
-    await close_db_connection()
-    logging.info("Application shutdown: MQTT client disconnected, DB connection closed.")
+    # Database is initialized in startup event handler
 
 @app.post("/unlock")
-async def unlock(request: Request):
+async def unlock(request: Request, db: AsyncSession = Depends(get_db)):
     body = await request.json()
     transaction_id = body.get("id") if body and body.get("id") else os.urandom(16).hex()
     try:
@@ -330,9 +315,18 @@ async def unlock(request: Request):
             capture_method="manual",
             metadata={"transaction_id": transaction_id} # Link Stripe PI to our ID
         )
-        db = await get_db_connection()
-        await db.execute("INSERT INTO transactions (transaction_id, payment_intent_id, status) VALUES (?, ?, ?)", 
-                         (transaction_id, payment_intent.id, 'pending_items'))
+        
+        # Get default device
+        device = await get_default_device(db)
+        
+        # Create transaction
+        transaction = Transaction(
+            transaction_id=transaction_id,
+            device_id=device.id,
+            payment_intent_id=payment_intent.id,
+            status=TransactionStatus.PENDING_ITEMS
+        )
+        db.add(transaction)
         await db.commit()
         logging.info(f"Transaction {transaction_id} created in DB with PaymentIntent {payment_intent.id}")
 

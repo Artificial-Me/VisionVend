@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(alembic init:*)",
+      "Bash(pip install:*)",
+      "Bash(mkdir:*)",
+      "Bash(python:*)",
+      "Bash(chmod:*)",
+      "Bash(./setup_venv.sh:*)",
+      "Bash(bash:*)",
+      "Bash(source:*)"
+    ],
+    "deny": []
+  }
+}
