@@ -1,6 +1,6 @@
 <!-- Logo -->
 <p align="center">
-  <img src="assets/logo-neonpunk.PNG" alt="VisionVend" width="300"/>
+  <img src="assets/logo.png" alt="VisionVend" width="300"/>
 </p>
 
 <h1 align="center">VisionVend</h1>
