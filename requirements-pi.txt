@@ -1,0 +1,46 @@
+# ==============================================================================
+# VisionVend Raspberry Pi Specific Requirements
+# ==============================================================================
+# This file contains dependencies that should ONLY be installed on Raspberry Pi hardware
+# Install with: pip install -r requirements.txt -r requirements-pi.txt
+# Note: These packages will fail to install on non-Pi platforms (Windows/Mac/Linux x86)
+
+# ------------------------------------------------------------------------------
+# Camera Access
+# ------------------------------------------------------------------------------
+picamera2>=0.3.12               # Raspberry Pi Camera Module interface
+libcamera>=0.0.5                # Camera stack for Linux (dependency of picamera2)
+
+# ------------------------------------------------------------------------------
+# GPIO and Hardware Control
+# ------------------------------------------------------------------------------
+RPi.GPIO>=0.7.1                 # GPIO pin control
+pigpio>=1.78                    # GPIO interface with hardware PWM and timing
+gpiozero>=1.6.2                 # High-level GPIO interface
+smbus2>=0.4.2                   # I2C communication
+spidev>=3.6                     # SPI communication
+rpi-hardware-pwm>=0.1.4         # Hardware PWM control
+
+# ------------------------------------------------------------------------------
+# Display Drivers
+# ------------------------------------------------------------------------------
+luma.oled>=3.11.0               # OLED display driver
+luma.lcd>=2.11.0                # LCD display driver
+adafruit-circuitpython-ssd1306>=2.12.4  # SSD1306 OLED driver
+
+# ------------------------------------------------------------------------------
+# Sensors and Hardware Components
+# ------------------------------------------------------------------------------
+adafruit-circuitpython-hx711>=1.2.10    # Load cell amplifier
+adafruit-circuitpython-neopixel>=6.3.8  # NeoPixel RGB LEDs
+adafruit-circuitpython-vl53l1x>=1.3.2   # Time-of-Flight distance sensor
+adafruit-circuitpython-ads1x15>=2.2.18  # ADC for analog sensors
+adafruit-circuitpython-bme280>=2.6.22   # Temperature/humidity/pressure sensor
+
+# ------------------------------------------------------------------------------
+# System Integration
+# ------------------------------------------------------------------------------
+rpi-rf>=0.9.7                   # RF communication
+pi-ina219>=1.4.0                # Current/voltage monitoring
+pi-thermal-camera>=1.3.0        # Thermal camera support
+rpi-power-monitor>=0.2.3        # Power monitoring utilities
