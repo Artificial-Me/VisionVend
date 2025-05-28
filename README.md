@@ -1,4 +1,35 @@
+
 ![VisionVend Logo](assets/logo.png)
+=======
+<!-- Logo -->
+<p align="center">
+  <img src="assets/logo.png" alt="VisionVend" width="600"/>
+</p>
+
+<h1 align="center">VisionVend</h1>
+
+<p align="center">
+  Enterprise-grade smart-vending platform for unattended retail
+</p>
+
+<p align="center">
+  <a href="https://github.com/Artificial-Me/VisionVend/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/Artificial-Me/VisionVend/ci.yml?branch=main&label=CI&logo=github" alt="CI Status">
+  </a>
+  <a href="https://github.com/Artificial-Me/VisionVend/releases">
+    <img src="https://img.shields.io/github/v/release/Artificial-Me/VisionVend?logo=semantic-release" alt="Latest Release">
+  </a>
+  <a href="https://codecov.io/gh/Artificial-Me/VisionVend">
+    <img src="https://img.shields.io/codecov/c/github/Artificial-Me/VisionVend?logo=codecov" alt="Coverage">
+  </a>
+  <a href="https://hub.docker.com/r/visionvend/api">
+    <img src="https://img.shields.io/docker/pulls/visionvend/api?color=2496ED&logo=docker" alt="Docker Pulls">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/Artificial-Me/VisionVend" alt="License">
+  </a>
+</p>
+
 
 # VisionVend
 
