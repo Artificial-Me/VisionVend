@@ -1,6 +1,4 @@
 
-![VisionVend Logo](assets/logo.png)
-=======
 <!-- Logo -->
 <p align="center">
   <img src="assets/logo.png" alt="VisionVend" width="600"/>
