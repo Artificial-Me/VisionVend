@@ -1,2 +1,6 @@
 .env
-VisionVend/inventory_managment/*.json
+.venv
+.mp4
+.log
+__pycache__
+src/object_detection/output/Timelapse-Balcony_result.mp4
