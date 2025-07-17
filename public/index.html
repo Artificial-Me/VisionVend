@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision Vend – The Future of Frictionless Retail</title>
+    <meta name="description" content="Transform any fridge into a self-checkout vending machine with Vision Vend's plug-and-play AI kit">
+    
+    <!-- THREE & GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            cursor: grab;
+        }
+        body:active { cursor: grabbing; }
+
+        #canvas-container { position: fixed; inset: 0; }
+
+        /* UI */
+        .ui-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            grid-template-rows: auto 1fr auto;
+            padding: 2rem;
+            gap: 1rem;
+        }
+
+        .hero-text {
+            grid-column: 2;
+            grid-row: 2;
+            text-align: center;
+            z-index: 20;
+        }
+        .hero-text h1 {
+            font-size: clamp(2.5rem, 8vw, 7rem);
+            font-weight: 900;
+            letter-spacing: -.04em;
+            background: linear-gradient(135deg, #00ffaa, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px rgba(0,255,170,.4));
+        }
+        .hero-text p {
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
+            opacity: .9;
+            max-width: 600px;
+            margin: .5rem auto 0;
+        }
+        .cta-button {
+            pointer-events: all;
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, #00ffaa, #00d4ff, #7c3aed);
+            color: #000;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: transform .3s, box-shadow .3s;
+            box-shadow: 0 0 20px rgba(0,255,170,.4);
+        }
+        .cta-button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 0 40px rgba(0,255,170,.7);
+        }
+
+        .info-panel {
+            grid-column: 1;
+            grid-row: 3;
+            max-width: 350px;
+            background: rgba(0,0,0,.6);
+            backdrop-filter: blur(12px);
+            padding: 1.5rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,.1);
+            pointer-events: all;
+        }
+        .info-panel h3 { color: #00ffaa; margin-bottom: .5rem; }
+        .info-panel p { font-size: .9rem; opacity: .8; line-height: 1.5; }
+
+        /* Loading */
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle, #111 0%, #000 100%);
+            display: grid;
+            place-items: center;
+            z-index: 1000;
+        }
+        .loading-text {
+            font-size: 1.5rem;
+            color: #00ffaa;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:.4;} 50%{opacity:1;} }
+
+        @media (max-width: 600px) {
+            .ui-overlay { grid-template-columns: 1fr; }
+            .info-panel { grid-column: 1; grid-row: 3; margin-top: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading -->
+    <div class="loading-screen" id="loading">
+        <div class="loading-text">Powering Up Vision Vend…</div>
+    </div>
+
+    <!-- WebGL -->
+    <div id="canvas-container"></div>
+
+    <!-- UI -->
+    <div class="ui-overlay">
+        <div class="hero-text">
+            <h1>Vision Vend</h1>
+            <p>Turn any fridge into a self-checkout vending machine in minutes</p>
+            <a href="#features" class="cta-button">Get Started</a>
+        </div>
+
+        <div class="info-panel">
+            <h3>Plug & Play AI Kit</h3>
+            <p>Vision + weight fusion, auto-checkout, 30-min install, zero code.</p>
+        </div>
+    </div>
+
+    <script>
+        /* --------------------------------------------------
+           SCENE & CAM
+        -------------------------------------------------- */
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000,.05);
+
+        const camera = new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,100);
+        camera.position.set(0,1.5,5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+        renderer.setSize(innerWidth,innerHeight);
+        renderer.setPixelRatio(devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        /* --------------------------------------------------
+           POST-PROCESSING
+        -------------------------------------------------- */
+        const composer = new THREE.EffectComposer(renderer);
+        const renderPass = new THREE.RenderPass(scene,camera);
+        composer.addPass(renderPass);
+
+        const bloomPass = new THREE.UnrealBloomPass(
+            new THREE.Vector2(innerWidth,innerHeight),
+            1.4,   // strength
+            .4,     // radius
+            .85     // threshold
+        );
+        composer.addPass(bloomPass);
+
+        /* --------------------------------------------------
+           CONTROLS
+        -------------------------------------------------- */
+        const controls = new THREE.OrbitControls(camera,renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = .05;
+        controls.minDistance = 2;
+        controls.maxDistance = 10;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = .5;
+
+        /* --------------------------------------------------
+           LIGHTS – CINEMATIC LOW KEY
+        -------------------------------------------------- */
+        // Key light (harsh spotlight)
+        const keyLight = new THREE.SpotLight(0x00ffaa,3,25,Math.PI/4,.2,2);
+        keyLight.position.set(4,6,3);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(2048,2048);
+        scene.add(keyLight);
+
+        // Rim light (purple)
+        const rimLight = new THREE.SpotLight(0x7c3aed,2,20,Math.PI/5,.3,2);
+        rimLight.position.set(-4,5,-4);
+        scene.add(rimLight);
+
+        // Subtle fill
+        const fillLight = new THREE.RectAreaLight(0x00d4ff,2,5,5);
+        fillLight.position.set(0,3,0);
+        fillLight.lookAt(0,0,0);
+        scene.add(fillLight);
+
+        // Ground glow
+        const groundLight = new THREE.PointLight(0x00ffaa,.8,10);
+        groundLight.position.set(0,-.8,0);
+        scene.add(groundLight);
+
+        /* --------------------------------------------------
+           GROUND
+        -------------------------------------------------- */
+        const groundGeo = new THREE.PlaneGeometry(30,30);
+        const groundMat = new THREE.MeshStandardMaterial({
+            color:0x111111,
+            metalness:.9,
+            roughness:.1
+        });
+        const ground = new THREE.Mesh(groundGeo,groundMat);
+        ground.rotation.x = -Math.PI/2;
+        ground.position.y = -1;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        /* --------------------------------------------------
+           GLTF MASCOT
+        -------------------------------------------------- */
+        let mascot;
+        const gltfLoader = new THREE.GLTFLoader();
+        gltfLoader.load('vending_machine_mascot.glb', gltf => {
+            mascot = gltf.scene;
+            mascot.scale.set(2.2,2.2,2.2);
+            mascot.traverse(obj=>{
+                if(obj.isMesh){
+                    obj.castShadow = true;
+                    obj.receiveShadow = true;
+                    obj.material.emissive = new THREE.Color(0x003322);
+                    obj.material.emissiveIntensity = .2;
+                }
+            });
+            scene.add(mascot);
+
+            // Breathing & idle animation
+            gsap.to(mascot.position,{y:"+=.08",duration:2,ease:"sine.inOut",yoyo:true,repeat:-1});
+            gsap.to(mascot.rotation,{y:Math.PI*2,duration:20,ease:"none",repeat:-1});
+
+            // Hide loader
+            gsap.to('#loading',{opacity:0,duration:.8,onComplete:()=>{document.getElementById('loading').style.display='none';}});
+        });
+
+        /* --------------------------------------------------
+           FLOATING 3D TEXT
+        -------------------------------------------------- */
+        const textGroup = new THREE.Group();
+        scene.add(textGroup);
+        const labels = ["AI Vision","Weight Fusion","Auto-Checkout","30-Min Install"];
+
+        labels.forEach((txt,i)=>{
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 128;
+            ctx.fillStyle = '#00ffaa';
+            ctx.font = 'bold 48px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(txt,256,64);
+            const tex = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.MeshBasicMaterial({
+                map:tex,
+                transparent:true,
+                side:THREE.DoubleSide
+            });
+            const geo = new THREE.PlaneGeometry(2.2,.55);
+            const mesh = new THREE.Mesh(geo,mat);
+            const ang = (i/labels.length)*Math.PI*2;
+            mesh.position.set(Math.cos(ang)*4.5,1.5+Math.sin(i)*.6,Math.sin(ang)*4.5);
+            mesh.lookAt(0,1.5,0);
+            textGroup.add(mesh);
+        });
+
+        gsap.to(textGroup.rotation,{y:Math.PI*2,duration:18,ease:"none",repeat:-1});
+
+        /* --------------------------------------------------
+           PARTICLES
+        -------------------------------------------------- */
+        const particleGeo = new THREE.BufferGeometry();
+        const particleCnt = 300;
+        const positions = new Float32Array(particleCnt*3);
+        const velocities = [];
+        for(let i=0;i<particleCnt*3;i+=3){
+            positions[i]=(Math.random()-.5)*20;
+            positions[i+1]=Math.random()*10;
+            positions[i+2]=(Math.random()-.5)*20;
+            velocities.push(
+                (Math.random()-.5)*.008,
+                -Math.random()*.008,
+                (Math.random()-.5)*.008
+            );
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+        const particleMat = new THREE.PointsMaterial({
+            color:0x00ffaa,
+            size:.06,
+            transparent:true,
+            opacity:.7,
+            blending:THREE.AdditiveBlending
+        });
+        const particles = new THREE.Points(particleGeo,particleMat);
+        scene.add(particles);
+
+        /* --------------------------------------------------
+           ANIMATE
+        -------------------------------------------------- */
+        function animate(){
+            requestAnimationFrame(animate);
+
+            // Update particles
+            const pos = particles.geometry.attributes.position.array;
+            for(let i=0;i<pos.length;i+=3){
+                pos[i]+=velocities[i];
+                pos[i+1]+=velocities[i+1];
+                pos[i+2]+=velocities[i+2];
+                if(pos[i+1]<-1) pos[i+1]=10;
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            controls.update();
+            composer.render();
+        }
+        animate();
+
+        /* --------------------------------------------------
+           HANDLE RESIZE
+        -------------------------------------------------- */
+        addEventListener('resize',()=>{
+            camera.aspect = innerWidth/innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth,innerHeight);
+            composer.setSize(innerWidth,innerHeight);
+        });
+    </script>
+</body>
+</html>
