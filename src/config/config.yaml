@@ -68,6 +68,7 @@ pins:
   tof_sda: 21
   tof_scl: 22
   pi_signal: 16
+  battery_adc: 35
 
 # Inventory mapping
 inventory:

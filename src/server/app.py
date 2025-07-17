@@ -18,6 +18,7 @@ from collections import Counter
 import aiosqlite
 import json
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from database import get_db, create_tables, async_session_maker
@@ -146,6 +147,22 @@ def append_sale_row(sku: str, qty: int, tx_id: str):
     except Exception as e:
         logging.error(f"Error in append_sale_row: {e}")
 
+# Create a thread pool for synchronous Google Sheets operations
+executor = ThreadPoolExecutor(max_workers=1)
+
+async def append_sale_row_async(sku: str, qty: int, tx_id: str):
+    """Asynchronously appends a sale row to Google Sheets by running the synchronous gspread call in a thread pool."""
+    if not GSHEET_ENABLED or not SALES_TAB:
+        return
+    
+    loop = asyncio.get_event_loop()
+    # Use run_in_executor to run the blocking I/O operation in a separate thread
+    await loop.run_in_executor(
+        executor,
+        append_sale_row, # The original synchronous function
+        sku, qty, tx_id
+    )
+
 # --- Google Sheets Integration END ---
 
 # --- Database Integration START ---
@@ -230,8 +247,13 @@ async def process_mqtt_message(payload_str: str, mqtt_client_ref):
                 new_status = TransactionStatus.CAPTURED
                 if GSHEET_ENABLED:
                     item_counts = Counter(items)
+                    # Create a list of async tasks for appending sales data
+                    tasks = []
                     for sku_item, qty_removed in item_counts.items():
-                        append_sale_row(sku_item, qty_removed, transaction_id) # append_sale_row is synchronous
+                        tasks.append(append_sale_row_async(sku_item, qty_removed, transaction_id))
+                    # Run all sheet-appending tasks concurrently
+                    await asyncio.gather(*tasks)
+                    logging.info(f"Finished logging {len(tasks)} item types to Google Sheets for transaction {transaction_id}.")
             elif payment_intent_id:
                 stripe.PaymentIntent.cancel(payment_intent_id)
                 send_notification({"title": "No Charge", "body": "No items removed"})
@@ -268,7 +290,11 @@ async def process_mqtt_message(payload_str: str, mqtt_client_ref):
             # Publish status via MQTT client passed as reference
             if new_status == TransactionStatus.ERROR:
                 mqtt_client_ref.publish(status_topic, f"{transaction_id}:ERROR")
-            elif new_status == TransactionStatus.CAPTURED:
+            if new_status == TransactionStatus.CAPTURED:
+                if GSHEET_ENABLED:
+                    logging.info(f"Logging {len(item_counts)} sale(s) to Google Sheets for transaction {transaction_id}...")
+                    for sku, qty in item_counts.items():
+                        await append_sale_row_async(sku, qty, transaction_id)
                 mqtt_client_ref.publish(status_topic, f"{transaction_id}:CAPTURED:{total:.2f}")
             elif new_status == TransactionStatus.CANCELLED:
                 mqtt_client_ref.publish(status_topic, f"{transaction_id}:CANCELLED")
