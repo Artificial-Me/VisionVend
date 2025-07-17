@@ -1,0 +1,9 @@
+# Ignore temporary and backup files
+*.tmp
+*.log
+*.bak
+.DS_Store
+Thumbs.db
+node_modules/
+dist/
+.env
