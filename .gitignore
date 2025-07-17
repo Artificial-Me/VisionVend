@@ -4,6 +4,13 @@ venv
 .mp4
 .log
 __pycache__
-
-
+requirements.txt
+requirements-dev.txt
+requirements-pi.txt
+dockerfile
+Dockerfile
+docker-compose.yml
+tests/
 src/object_detection/output/
+logs/
+data/
