@@ -1,0 +1,279 @@
+# VisionVend Production Configuration
+# This file contains production settings with environment variable references for secrets
+
+# Network settings
+wifi:
+  ssid: "${WIFI_SSID}"
+  password: "${WIFI_PASSWORD}"
+
+# MQTT broker settings
+mqtt:
+  broker: "${MQTT_BROKER:-mqtt.visionvend.com}"
+  port: ${MQTT_PORT:-8883}
+  client_id: "${MQTT_CLIENT_ID:-visionvend_${MACHINE_ID}}"
+  unlock_topic: "case/${MACHINE_ID}/cmd"
+  status_topic: "case/${MACHINE_ID}/status"
+  door_topic: "case/${MACHINE_ID}/door"
+  hmac_secret: "${HMAC_SECRET}"
+  use_tls: true
+  username: "${MQTT_USERNAME}"
+  password: "${MQTT_PASSWORD}"
+  keepalive: 60
+  reconnect_delay: 5
+  max_reconnect_attempts: 10
+
+# LTE settings
+lte:
+  apn: "${LTE_APN}"
+  username: "${LTE_USERNAME}"
+  password: "${LTE_PASSWORD}"
+  pin: "${LTE_PIN}"
+  band: "${LTE_BAND:-auto}"
+  mode: "cat-m1"  # cat-m1, nb-iot, or lte
+
+# Stripe API
+stripe:
+  api_key: "${STRIPE_API_KEY}"
+  webhook_secret: "${STRIPE_WEBHOOK_SECRET}"
+  connect_account_id: "${STRIPE_CONNECT_ACCOUNT_ID}"
+  payment_methods:
+    - card
+    - apple_pay
+    - google_pay
+  currency: "usd"
+  statement_descriptor: "VisionVend"
+  statement_descriptor_suffix: "${MACHINE_ID}"
+
+# Server settings
+server:
+  host: "0.0.0.0"
+  port: ${PORT:-8000}
+  url: "${SERVER_URL:-https://api.visionvend.com}"
+  workers: ${SERVER_WORKERS:-4}
+  timeout: 60
+  keepalive: 65
+  max_requests: 1000
+  max_requests_jitter: 50
+  graceful_timeout: 30
+  cors:
+    allowed_origins:
+      - "https://app.visionvend.com"
+      - "https://admin.visionvend.com"
+      - "${CORS_ADDITIONAL_ORIGINS}"
+    allowed_methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "OPTIONS"
+    allowed_headers:
+      - "Content-Type"
+      - "Authorization"
+      - "X-API-Key"
+    allow_credentials: true
+    max_age: 86400
+
+# Database settings
+database:
+  url: "${DATABASE_URL}"
+  pool_size: ${DB_POOL_SIZE:-10}
+  max_overflow: ${DB_MAX_OVERFLOW:-20}
+  pool_timeout: ${DB_POOL_TIMEOUT:-30}
+  pool_recycle: ${DB_POOL_RECYCLE:-1800}
+  echo: false
+  ssl_require: true
+
+# Redis cache settings
+redis:
+  url: "${REDIS_URL}"
+  pool_size: ${REDIS_POOL_SIZE:-10}
+  socket_timeout: 5
+  socket_connect_timeout: 5
+  retry_on_timeout: true
+  health_check_interval: 30
+  key_prefix: "visionvend:"
+  default_ttl: 3600
+  lock_timeout: 10
+
+# Camera settings
+camera:
+  resolution: [1280, 720]
+  framerate: 30
+  storage_path: "/data/videos"
+  rotation: 0
+  auto_white_balance: true
+  exposure_mode: "auto"
+  iso: 0
+  shutter_speed: 0
+  video_stabilization: false
+  led: false
+  storage_retention_days: 7
+  max_storage_gb: 10
+
+# Training and auto-labeling
+training:
+  dataset_path: "/data/datasets"
+  model_path: "/data/models/rtdetr.pt"
+  base_model: "rtdetr-l.pt"
+  min_frames: 60
+  # --- auto-label knobs ---
+  autolabel:
+    min_area: 5000      # lowest px² we still consider a product
+    max_area: 0.6       # fraction of frame
+    stable_frames: 5
+    save_aug: true
+    hand_iou_max: 0.35  # if bounding-box overlaps hand >35 % we shrink it
+    history: 400        # MOG2 history for background subtraction
+    varThreshold: 40    # MOG2 varThreshold
+    cam_ids: [0, 1]     # Camera device IDs (top-down, bottom-up)
+    restock_pin: 27     # GPIO pin for RESTOCK button
+    led_pin: 23         # GPIO pin for RGB LED feedback
+    led_green: [0,255,0] # RGB for success
+    led_red: [255,0,0]   # RGB for error
+    timeout_sec: 15     # Max seconds to wait for operator
+    log_path: "/data/logs/autolabel_log.jsonl" # Where to write logs
+
+# Hardware pins (ESP32-S3)
+pins:
+  mosfet: 26
+  hall_sensor: 27
+  hx711_sck: 14
+  hx711_dt: 15
+  oled_sda: 19
+  oled_scl: 18
+  neopixel: 23
+  buzzer: 25
+  tof_sda: 21
+  tof_scl: 22
+  pi_signal: 16
+
+# Inventory mapping
+inventory:
+  # This will be populated from database or Google Sheets
+  # Example format:
+  # cola: {weight: 355, tolerance: 5, price: 2.00}
+  # chips: {weight: 70, tolerance: 4, price: 1.50}
+
+# Lock settings
+lock:
+  timeout: 10
+  max_open_time: 60
+  auto_relock: true
+  fail_secure: true
+  alarm_threshold: 120
+
+# Feedback settings
+feedback:
+  languages: ["en"]
+  tts_enabled: ${TTS_ENABLED:-false}
+  led_brightness: 0.5
+  sound_volume: 0.7
+  haptic_feedback: false
+
+# Monitoring settings
+monitoring:
+  prometheus_enabled: true
+  metrics_endpoint: "/metrics"
+  health_endpoint: "/health"
+  statsd_host: "${STATSD_HOST}"
+  statsd_port: ${STATSD_PORT:-8125}
+  statsd_prefix: "visionvend.${MACHINE_ID}"
+  log_metrics: true
+  system_metrics_interval: 30
+  trace_sample_rate: 0.1
+  profiling_enabled: false
+
+# Logging configuration
+logging:
+  level: "${LOG_LEVEL:-INFO}"
+  format: "json"
+  file_path: "/data/logs/visionvend.log"
+  max_size_mb: 100
+  backup_count: 10
+  syslog_enabled: ${SYSLOG_ENABLED:-false}
+  syslog_host: "${SYSLOG_HOST}"
+  syslog_port: ${SYSLOG_PORT:-514}
+  log_to_console: true
+  request_logging: true
+  sensitive_fields:
+    - "password"
+    - "api_key"
+    - "token"
+    - "secret"
+    - "credit_card"
+
+# Security settings
+security:
+  jwt_secret: "${JWT_SECRET_KEY}"
+  jwt_algorithm: "HS256"
+  jwt_expiry_seconds: 86400
+  api_key_header: "X-API-Key"
+  rate_limit:
+    enabled: true
+    default_limit: 100
+    default_period: 60
+    by_ip: true
+    by_user: true
+  cors_enabled: true
+  ssl_redirect: true
+  content_security_policy: "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+  x_frame_options: "DENY"
+  x_content_type_options: "nosniff"
+  x_xss_protection: "1; mode=block"
+  referrer_policy: "strict-origin-when-cross-origin"
+  hsts_enabled: true
+  hsts_max_age: 31536000
+
+# Push notification settings
+push_notifications:
+  enabled: true
+  vapid_public_key: "${VAPID_PUBLIC_KEY}"
+  vapid_private_key: "${VAPID_PRIVATE_KEY}"
+  vapid_subject: "mailto:${VAPID_CONTACT_EMAIL}"
+
+# Google Sheets integration
+google_sheets:
+  enabled: ${GOOGLE_SHEETS_ENABLED:-true}
+  service_account_path: "${SERVICE_ACCOUNT_PATH:-/secrets/service-account.json}"
+  sheet_id: "${GOOGLE_SHEET_ID}"
+  sync_interval: 300  # seconds
+
+# Health check parameters
+health_check:
+  timeout: 5
+  interval: 30
+  retries: 3
+  startup_period: 20
+  components:
+    - database
+    - redis
+    - mqtt
+    - stripe
+    - camera
+    - hardware
+  failure_threshold: 3
+  success_threshold: 2
+
+# Performance optimization
+performance:
+  cache_ttl: 300
+  connection_pool_size: 10
+  thread_pool_size: 8
+  process_pool_size: 4
+  batch_size: 100
+  compression_enabled: true
+  gzip_level: 6
+  etag_enabled: true
+  response_timeout: 30
+  keepalive_timeout: 65
+  backlog: 2048
+
+# Backup settings
+backup:
+  enabled: true
+  schedule: "0 0 * * *"  # Daily at midnight
+  retention_days: 30
+  s3_bucket: "${BACKUP_S3_BUCKET}"
+  s3_prefix: "backups/${MACHINE_ID}"
+  local_path: "/data/backups"
+  encryption_key: "${BACKUP_ENCRYPTION_KEY}"

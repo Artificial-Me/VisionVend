@@ -1,3 +1,4 @@
+
 # Core dependencies
 torch==2.0.1
 torchvision==0.15.2
@@ -23,3 +24,111 @@ python-jose[cryptography]==3.3.0
 # Utilities
 pyyaml==6.0.1
 python-dotenv==1.0.0
+=======
+# ==============================================================================
+# VisionVend Production Requirements
+# ==============================================================================
+# This file contains all dependencies required for VisionVend production deployment
+# All versions are pinned for stability and reproducibility
+# For development dependencies, see requirements-dev.txt
+
+# ------------------------------------------------------------------------------
+# Core Web Framework and API
+# ------------------------------------------------------------------------------
+fastapi==0.104.1                # High-performance API framework
+uvicorn[standard]==0.23.2       # ASGI server
+gunicorn==21.2.0                # Production WSGI HTTP Server
+pydantic==2.4.2                 # Data validation and settings management
+email-validator==2.0.0          # Email validation for Pydantic
+python-multipart==0.0.6         # Multipart form parsing
+ujson==5.8.0                    # Fast JSON parsing
+orjson==3.9.7                   # Faster JSON library for performance
+starlette==0.27.0               # FastAPI dependency
+httpx==0.25.0                   # Async HTTP client for API calls
+tenacity==8.2.3                 # Retry library for API resilience
+
+# ------------------------------------------------------------------------------
+# Security
+# ------------------------------------------------------------------------------
+python-jose[cryptography]==3.3.0 # JWT token handling
+passlib[bcrypt]==1.7.4          # Password hashing
+cryptography==41.0.5            # Cryptographic recipes and primitives
+pyjwt==2.8.0                    # JSON Web Token implementation
+pyopenssl==23.3.0               # TLS/SSL wrapper
+certifi==2023.7.22              # Curated certificates
+pywebpush==1.14.0               # Web Push notifications
+
+# ------------------------------------------------------------------------------
+# Database and ORM
+# ------------------------------------------------------------------------------
+sqlalchemy==2.0.23              # SQL toolkit and ORM
+alembic==1.12.1                 # Database migration tool
+psycopg2-binary==2.9.9          # PostgreSQL adapter
+asyncpg==0.28.0                 # Async PostgreSQL driver
+aiosqlite==0.19.0               # Async SQLite for edge caching
+greenlet==3.0.1                 # Required for SQLAlchemy async
+
+# ------------------------------------------------------------------------------
+# Caching and Message Queues
+# ------------------------------------------------------------------------------
+redis==5.0.1                    # Redis client
+hiredis==2.2.3                  # C parser for Redis
+paho-mqtt==1.6.1                # MQTT client for IoT communication
+aioredis==2.0.1                 # Async Redis client
+pika==1.3.2                     # RabbitMQ client
+
+# ------------------------------------------------------------------------------
+# Monitoring and Observability
+# ------------------------------------------------------------------------------
+prometheus-client==0.17.1       # Prometheus metrics
+opentelemetry-api==1.20.0       # OpenTelemetry API
+opentelemetry-sdk==1.20.0       # OpenTelemetry SDK
+opentelemetry-exporter-otlp==1.20.0 # OTLP exporter
+structlog==23.2.0               # Structured logging
+python-json-logger==2.0.7       # JSON formatter for logs
+statsd==4.0.1                   # StatsD client
+psutil==5.9.6                   # System monitoring
+
+# ------------------------------------------------------------------------------
+# Payment Processing
+# ------------------------------------------------------------------------------
+stripe==7.5.0                   # Stripe API client
+
+# ------------------------------------------------------------------------------
+# Computer Vision and Machine Learning
+# ------------------------------------------------------------------------------
+torch==2.1.1                    # PyTorch (CPU version, use specific CUDA version if needed)
+torchvision==0.16.1             # Computer vision models
+opencv-python==4.8.1.78         # OpenCV for image processing
+Pillow==10.1.0                  # Python Imaging Library
+ultralytics==8.2.0              # YOLOv8 and RT-DETR models
+mediapipe==0.10.9               # Hand detection
+filterpy==1.4.5                 # Kalman filters for tracking
+lap==0.4.0                      # Linear assignment problem solver for tracking
+scikit-image==0.23.0            # Image processing
+numpy==1.26.1                   # Numerical computing
+scipy==1.11.3                   # Scientific computing
+
+# ------------------------------------------------------------------------------
+# Google Integration
+# ------------------------------------------------------------------------------
+gspread==5.12.0                 # Google Sheets API
+google-auth==2.23.3             # Google authentication
+google-auth-oauthlib==1.0.0     # OAuth 2.0 for Google
+google-auth-httplib2==0.1.1     # HTTP client for Google Auth
+
+# ------------------------------------------------------------------------------
+# Configuration and Utilities
+# ------------------------------------------------------------------------------
+pyyaml==6.0.1                   # YAML parser and emitter
+python-dotenv==1.0.0            # Environment variable management
+jinja2==3.1.2                   # Template engine for email/reports
+aiohttp==3.8.6                  # Async HTTP client/server
+aiodns==3.1.1                   # Async DNS resolver
+cchardet==2.1.7                 # Character encoding detection
+python-dateutil==2.8.2          # Date utilities
+pytz==2023.3.post1              # Timezone library
+tzdata==2023.3                  # Timezone database
+humanize==4.8.0                 # Human-friendly outputs
+tqdm==4.66.1                    # Progress bar
+
