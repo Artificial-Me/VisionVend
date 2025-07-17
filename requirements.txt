@@ -1,11 +1,10 @@
-
 # Core dependencies
-torch==2.0.1
-torchvision==0.15.2
+torch==2.1.2
+torchvision==0.16.2
 opencv-python==4.8.1.78
 transformers==4.33.3
 supervision==0.18.0
-numpy==1.24.3
+numpy==1.26.1
 
 # Hardware interfaces
 RPi.GPIO==0.7.1; platform_machine=="armv7l"
@@ -97,8 +96,8 @@ stripe==7.5.0                   # Stripe API client
 # ------------------------------------------------------------------------------
 # Computer Vision and Machine Learning
 # ------------------------------------------------------------------------------
-torch==2.1.1                    # PyTorch (CPU version, use specific CUDA version if needed)
-torchvision==0.16.1             # Computer vision models
+torch==2.1.2                    # PyTorch (CPU version, use specific CUDA version if needed)
+torchvision==0.16.2             # Computer vision models
 opencv-python==4.8.1.78         # OpenCV for image processing
 Pillow==10.1.0                  # Python Imaging Library
 ultralytics==8.2.0              # YOLOv8 and RT-DETR models
@@ -131,4 +130,3 @@ pytz==2023.3.post1              # Timezone library
 tzdata==2023.3                  # Timezone database
 humanize==4.8.0                 # Human-friendly outputs
 tqdm==4.66.1                    # Progress bar
-
