@@ -1,4 +1,6 @@
 import os
+import json
+from pathlib import Path
 SIM = os.getenv("SIMULATE", "0") == "1"
 
 if SIM:
@@ -39,7 +41,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 # Load config
-with open("config/config.yaml", "r") as f:
+CONFIG_FILE_PATH = Path(__file__).parent.parent / "config" / "config.yaml"
+with open(CONFIG_FILE_PATH, "r") as f:
     config = yaml.safe_load(f)
 
 # GPIO setup
@@ -87,26 +90,25 @@ async def autolabel_workflow(sku):
     frame_queues = [asyncio.Queue() for _ in CAM_IDS]
     log_queue = asyncio.Queue()
     tasks = []
+    
     for i, cam_id in enumerate(CAM_IDS):
         tasks.append(asyncio.create_task(capture_frames(cam_id, frame_queues[i], stop_event, log_queue)))
         tasks.append(asyncio.create_task(track_and_save(cam_id, frame_queues[i], stop_event, sku, log_queue)))
+    
     try:
         await asyncio.wait_for(asyncio.gather(*tasks), timeout=TIMEOUT)
         set_led(LED_GREEN)
         print("Auto-label success!")
+        return True
     except asyncio.TimeoutError:
         stop_event.set()
         set_led(LED_RED)
         print("Auto-label timed out.")
-    # Log output (write to file if desired)
-    logs = []
-    while not log_queue.empty():
-        logs.append(await log_queue.get())
-    if logs:
-        log_path = config["training"]["autolabel"]["log_path"]
-        with open(log_path, "a") as f:
-            for entry in logs:
-                f.write(json.dumps(entry)+"\n")
+        return False
+    finally:
+        # Proper cleanup
+        for task in tasks:
+            task.cancel()
 
 
 # ML setup

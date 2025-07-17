@@ -1,10 +1,12 @@
 import os
+import json
+from pathlib import Path
 SIM = os.getenv("SIMULATE", "0") == "1"
 
 if SIM:
     # ───── fake hardware ─────
     import paho.mqtt.client as MQTTClient
-    from VisionVend.raspberry_pi.mock_hw import DummyPin as Pin, DummyHX711 as HX711
+    from VisionVend.raspberry_pi.mock_hw import DummyPin as Pin, DummyHX711 as HX711, uasyncio as asyncio
     
     class network:                     # tiny stub
         class WLAN:
@@ -43,11 +45,13 @@ else:
     from ssd1306 import SSD1306_I2C
     from neopixel import NeoPixel
     from hx711 import HX711
+    import uasyncio as asyncio
 
 import time
 import yaml
 import hmac
 import hashlib
+import ujson
 
 # Load config
 with open("config/config.yaml", "r") as f:
@@ -79,8 +83,11 @@ pi_signal = Pin(config["pins"]["pi_signal"], Pin.OUT)
 
 # Feedback functions
 def set_led(color):
-    colors = {"green": (0, 255, 0), "blue": (0, 0, 255), "red": (255, 0, 0), "off": (0, 0, 0)}
-    neopixel[0] = colors.get(color, (0, 0, 0))
+    if isinstance(color, str):
+        colors = {"green": (0, 255, 0), "blue": (0, 0, 255), "red": (255, 0, 0), "off": (0, 0, 0)}
+        neopixel[0] = colors.get(color, (0, 0, 0))
+    elif isinstance(color, tuple):
+        neopixel[0] = color
     neopixel.write()
 
 def beep(duration=0.1):
@@ -105,6 +112,33 @@ def read_voltage():
     voltage = (raw / 4095) * 3.3 * 2
     return voltage
 
+# Autolabel workflow
+async def autolabel_workflow(sku):
+    set_led((0,0,255))  # Blue: in progress
+    stop_event = asyncio.Event()
+    frame_queues = [asyncio.Queue() for _ in CAM_IDS]
+    log_queue = asyncio.Queue()
+    tasks = []
+    
+    for i, cam_id in enumerate(CAM_IDS):
+        tasks.append(asyncio.create_task(capture_frames(cam_id, frame_queues[i], stop_event, log_queue)))
+        tasks.append(asyncio.create_task(track_and_save(cam_id, frame_queues[i], stop_event, sku, log_queue)))
+    
+    try:
+        await asyncio.wait_for(asyncio.gather(*tasks), timeout=TIMEOUT)
+        set_led(LED_GREEN)
+        print("Auto-label success!")
+        return True
+    except asyncio.TimeoutError:
+        stop_event.set()
+        set_led(LED_RED)
+        print("Auto-label timed out.")
+        return False
+    finally:
+        # Proper cleanup
+        for task in tasks:
+            task.cancel()
+
 # MQTT callback
 def on_message(topic, msg):
     payload, received_hmac = msg.decode().split("|")
@@ -127,7 +161,7 @@ def on_message(topic, msg):
                     final_weight = read_weight()
                     delta_mass = baseline_weight - final_weight
                     # Get items from Pi (simplified, assume GPIO/serial)
-                    removed_items = ["cola"]  # Placeholder
+                    removed_items = ["cola"]  # Placeholder for your main application logic
                     payload = f"{transaction_id}:{','.join(removed_items) if removed_items else ''}:{delta_mass}"
                     hmac_val = hmac.new(config["mqtt"]["hmac_secret"].encode(), payload.encode(), hashlib.sha256).hexdigest()
                     mqtt_client.publish(config["mqtt"]["door_topic"], f"{payload}|{hmac_val}")
